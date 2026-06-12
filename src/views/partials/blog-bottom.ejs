@@ -1,0 +1,25 @@
+</main>
+<section class="subscribe">
+  <div class="container">
+    <h3>Subscribe to the newsletter</h3>
+    <p>Get new posts straight to your inbox.</p>
+    <form method="POST" action="/blog/<%= user.username %>/subscribe" class="subscribe-form">
+      <input type="email" name="email" placeholder="you@example.com" required>
+      <button class="btn btn-primary" type="submit">Subscribe</button>
+    </form>
+  </div>
+</section>
+<footer class="blog-footer">
+  <div class="container">
+    <div class="socials">
+      <% if (settings.twitter) { %><a href="<%= settings.twitter %>" target="_blank" rel="noopener">Twitter/X</a><% } %>
+      <% if (settings.github) { %><a href="<%= settings.github %>" target="_blank" rel="noopener">GitHub</a><% } %>
+      <% if (settings.linkedin) { %><a href="<%= settings.linkedin %>" target="_blank" rel="noopener">LinkedIn</a><% } %>
+    </div>
+    <p><%= settings.footerText || ('© ' + new Date().getFullYear() + ' ' + user.name) %></p>
+    <p class="powered">Powered by <a href="/">IncBlog</a> · <a href="/blog/<%= user.username %>/rss.xml">RSS</a> · <a href="/blog/<%= user.username %>/sitemap.xml">Sitemap</a></p>
+  </div>
+</footer>
+<script src="/js/theme.js"></script>
+</body>
+</html>

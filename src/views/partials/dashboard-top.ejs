@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<%- include('head') %>
+<title><%= title %> · IncBlog</title>
+</head>
+<body class="dashboard">
+<aside class="sidebar">
+  <a class="logo" href="/dashboard">Inc<span>Blog</span></a>
+  <nav class="side-nav">
+    <a href="/dashboard" class="<%= active === 'home' ? 'active' : '' %>">Dashboard</a>
+    <a href="/dashboard/posts" class="<%= active === 'posts' ? 'active' : '' %>">Posts</a>
+    <a href="/dashboard/media" class="<%= active === 'media' ? 'active' : '' %>">Media</a>
+    <a href="/dashboard/analytics" class="<%= active === 'analytics' ? 'active' : '' %>">Analytics</a>
+    <a href="/dashboard/subscribers" class="<%= active === 'subscribers' ? 'active' : '' %>">Subscribers</a>
+    <a href="/dashboard/settings" class="<%= active === 'settings' ? 'active' : '' %>">Settings</a>
+    <a href="/dashboard/profile" class="<%= active === 'profile' ? 'active' : '' %>">Profile</a>
+  </nav>
+  <div class="sidebar-footer">
+    <a href="/blog/<%= currentUser.username %>" target="_blank">View blog ↗</a>
+    <button id="theme-toggle" class="btn btn-ghost" type="button">Toggle theme</button>
+    <a href="/logout">Log out</a>
+  </div>
+</aside>
+<main class="content">

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<%- include('partials/head') %>
+<title><%= title %> · IncBlog</title>
+</head>
+<body class="auth">
+<div class="auth-card card">
+  <a class="logo" href="/">Inc<span>Blog</span></a>
+  <h1><%= title %></h1>
+  <p><%= locals.message || "The page you're looking for doesn't exist." %></p>
+  <a class="btn btn-primary" href="/">Go home</a>
+</div>
+</body>
+</html>

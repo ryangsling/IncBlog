@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<%- include('head') %>
+<title><%= title %></title>
+<% if (locals.metaDescription) { %><meta name="description" content="<%= metaDescription %>"><% } %>
+<% if (locals.ogTitle) { %><meta property="og:title" content="<%= ogTitle %>"><% } %>
+<% if (locals.metaDescription) { %><meta property="og:description" content="<%= metaDescription %>"><% } %>
+<% if (locals.ogImage) { %><meta property="og:image" content="<%= ogImage %>"><% } %>
+<link rel="alternate" type="application/rss+xml" title="RSS" href="/blog/<%= user.username %>/rss.xml">
+<% if (settings.gaId) { %>
+<script async src="https://www.googletagmanager.com/gtag/js?id=<%= settings.gaId %>"></script>
+<script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','<%= settings.gaId %>');</script>
+<% } %>
+</head>
+<body class="blog">
+<header class="blog-header">
+  <div class="container">
+    <a class="logo" href="/blog/<%= user.username %>"><%= settings.blogTitle || (user.name + "'s Blog") %></a>
+    <button id="theme-toggle" class="btn btn-ghost" type="button" aria-label="Toggle theme">◐</button>
+  </div>
+</header>
+<main class="container blog-main">

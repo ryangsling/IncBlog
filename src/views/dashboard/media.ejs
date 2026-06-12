@@ -1,0 +1,34 @@
+<%- include('../partials/dashboard-top') %>
+<div class="page-head">
+  <h1>Media</h1>
+</div>
+<% if (error) { %><div class="notice notice-error"><%= error %></div><% } %>
+<div class="card">
+  <form method="POST" action="/dashboard/media" enctype="multipart/form-data" class="upload-form">
+    <input type="file" name="file" accept="image/jpeg,image/png,image/gif,image/webp" required>
+    <button class="btn btn-primary" type="submit">Upload</button>
+    <span class="hint">JPEG, PNG, GIF or WebP up to 10MB. Converted to WebP automatically.</span>
+  </form>
+</div>
+<% if (media.length) { %>
+<div class="media-grid">
+  <% media.forEach(function(m) { %>
+  <div class="media-item card">
+    <img src="<%= m.thumbUrl || m.url %>" alt="<%= m.originalName || m.filename %>" loading="lazy">
+    <div class="media-meta">
+      <span class="media-name" title="<%= m.originalName || m.filename %>"><%= m.originalName || m.filename %></span>
+      <span class="media-info"><%= (m.size / 1024).toFixed(1) %> KB · <%= new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></span>
+    </div>
+    <div class="media-actions">
+      <button type="button" class="btn btn-ghost btn-sm copy-url" data-url="<%= m.url %>">Copy URL</button>
+      <form method="POST" action="/dashboard/media/<%= m.id %>/delete" data-confirm="Delete this file?" class="inline">
+        <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+      </form>
+    </div>
+  </div>
+  <% }) %>
+</div>
+<% } else { %>
+<div class="card"><p class="empty">No media uploaded yet.</p></div>
+<% } %>
+<%- include('../partials/dashboard-bottom') %>

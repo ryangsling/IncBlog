@@ -1,0 +1,60 @@
+<%- include('../partials/dashboard-top') %>
+<div class="page-head">
+  <h1>Analytics</h1>
+</div>
+<div class="stat-cards">
+  <div class="card stat"><span class="stat-value"><%= totalViews %></span><span class="stat-label">Total views (all time)</span></div>
+  <div class="card stat"><span class="stat-value"><%= posts.length %></span><span class="stat-label">Posts tracked</span></div>
+</div>
+<div class="card">
+  <h2>Daily views · last 30 days</h2>
+  <canvas id="daily-chart" height="90"></canvas>
+</div>
+<div class="card">
+  <h2>Top 5 posts</h2>
+  <% if (topPosts.length) { %>
+  <ol class="top-posts">
+    <% topPosts.forEach(function(p) { %>
+    <li><a href="/dashboard/posts/<%= p.id %>/edit"><%= p.title %></a> <span class="muted"><%= p.views %> views</span></li>
+    <% }) %>
+  </ol>
+  <% } else { %><p class="empty">No posts yet.</p><% } %>
+</div>
+<div class="card">
+  <h2>Views per post</h2>
+  <% if (posts.length) { %>
+  <table data-sortable>
+    <thead><tr><th data-sort="text">Title</th><th data-sort="text">Status</th><th data-sort="num">Views</th><th data-sort="text">Published</th></tr></thead>
+    <tbody>
+      <% posts.forEach(function(p) { %>
+      <tr>
+        <td><a href="/dashboard/posts/<%= p.id %>/edit"><%= p.title %></a></td>
+        <td><span class="badge badge-<%= p.status %>"><%= p.status %></span></td>
+        <td><%= p.views %></td>
+        <td><%= p.publishAt ? new Date(p.publishAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—' %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } else { %><p class="empty">No posts yet.</p><% } %>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<script>
+  const DAILY = <%- JSON.stringify(daily) %>;
+  const ctx = document.getElementById('daily-chart');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: DAILY.map(d => d.date.slice(5)),
+      datasets: [{ label: 'Views', data: DAILY.map(d => d.count), backgroundColor: '#3b82f6', borderRadius: 3 }]
+    },
+    options: {
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: '#2a2a2a' }, ticks: { color: '#9ca3af' } },
+        y: { beginAtZero: true, grid: { color: '#2a2a2a' }, ticks: { color: '#9ca3af', precision: 0 } }
+      }
+    }
+  });
+</script>
+<%- include('../partials/dashboard-bottom') %>

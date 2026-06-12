@@ -1,0 +1,18 @@
+<%- include('../partials/blog-top') %>
+<h1 class="archive-heading"><%= heading %></h1>
+<div class="post-list">
+  <% posts.forEach(function(p) { %>
+  <article class="post-card">
+    <h2><a href="/blog/<%= user.username %>/<%= p.slug %>"><%= p.title %></a></h2>
+    <p class="meta">
+      <%= new Date(p.publishAt || p.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+      · <%= readTime(p.content) %> min read
+      <% if (p.Category) { %> · <a href="/blog/<%= user.username %>/category/<%= p.Category.slug %>"><%= p.Category.name %></a><% } %>
+    </p>
+    <% if (p.excerpt) { %><p class="excerpt"><%= p.excerpt %></p><% } %>
+  </article>
+  <% }) %>
+  <% if (!posts.length) { %><p class="empty">No posts found.</p><% } %>
+</div>
+<p><a href="/blog/<%= user.username %>">← All posts</a></p>
+<%- include('../partials/blog-bottom') %>

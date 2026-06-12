@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<%- include('../partials/head') %>
+<title>Create account · IncBlog</title>
+</head>
+<body class="auth">
+<div class="auth-card card">
+  <a class="logo" href="/">Inc<span>Blog</span></a>
+  <h1>Start your blog</h1>
+  <% if (error) { %><div class="notice notice-error"><%= error %></div><% } %>
+  <form method="POST" action="/register">
+    <label>Name
+      <input type="text" name="name" value="<%= values.name || '' %>" required autofocus>
+    </label>
+    <label>Email
+      <input type="email" name="email" value="<%= values.email || '' %>" required>
+    </label>
+    <label>Password (min 8 characters)
+      <input type="password" name="password" minlength="8" required>
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">Create account</button>
+  </form>
+  <a class="btn btn-ghost btn-block" href="/auth/google">Continue with Google</a>
+  <p class="auth-alt">Already have an account? <a href="/login">Log in</a></p>
+</div>
+</body>
+</html>

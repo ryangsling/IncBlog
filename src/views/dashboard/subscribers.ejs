@@ -1,0 +1,33 @@
+<%- include('../partials/dashboard-top') %>
+<div class="page-head">
+  <h1>Subscribers</h1>
+  <a class="btn btn-ghost" href="/dashboard/subscribers/export.csv">Export CSV</a>
+</div>
+<div class="card">
+  <form method="GET" action="/dashboard/subscribers" class="filter-form">
+    <input type="search" name="q" placeholder="Search email..." value="<%= q %>">
+    <select name="status">
+      <option value="all" <%= statusFilter === 'all' ? 'selected' : '' %>>All</option>
+      <option value="active" <%= statusFilter === 'active' ? 'selected' : '' %>>Active</option>
+      <option value="unsubscribed" <%= statusFilter === 'unsubscribed' ? 'selected' : '' %>>Unsubscribed</option>
+    </select>
+    <button class="btn btn-primary" type="submit">Filter</button>
+  </form>
+  <% if (subscribers.length) { %>
+  <table>
+    <thead><tr><th>Email</th><th>Status</th><th>Subscribed</th></tr></thead>
+    <tbody>
+      <% subscribers.forEach(function(s) { %>
+      <tr>
+        <td><%= s.email %></td>
+        <td><span class="badge badge-<%= s.status === 'active' ? 'published' : 'draft' %>"><%= s.status %></span></td>
+        <td><%= new Date(s.subscribedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } else { %>
+  <p class="empty">No subscribers found.</p>
+  <% } %>
+</div>
+<%- include('../partials/dashboard-bottom') %>

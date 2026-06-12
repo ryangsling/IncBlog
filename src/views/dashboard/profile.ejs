@@ -1,0 +1,29 @@
+<%- include('../partials/dashboard-top') %>
+<div class="page-head">
+  <h1>Profile</h1>
+</div>
+<% if (saved) { %><div class="notice">Profile saved.</div><% } %>
+<% if (error) { %><div class="notice notice-error"><%= error %></div><% } %>
+<div class="card">
+  <form method="POST" action="/dashboard/profile" enctype="multipart/form-data">
+    <div class="avatar-row">
+      <% if (currentUser.avatar) { %>
+      <img class="avatar" src="<%= currentUser.avatar %>" alt="<%= currentUser.name %>">
+      <% } else { %>
+      <div class="avatar avatar-placeholder"><%= currentUser.name.charAt(0).toUpperCase() %></div>
+      <% } %>
+      <label>Avatar
+        <input type="file" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp">
+      </label>
+    </div>
+    <label>Name
+      <input type="text" name="name" value="<%= currentUser.name %>" required>
+    </label>
+    <label>Bio
+      <textarea name="bio" rows="4" placeholder="Tell readers about yourself..."><%= currentUser.bio %></textarea>
+    </label>
+    <p class="hint">Email: <code><%= currentUser.email %></code> · Blog URL: <a href="/blog/<%= currentUser.username %>" target="_blank">/blog/<%= currentUser.username %></a></p>
+    <button class="btn btn-primary" type="submit">Save profile</button>
+  </form>
+</div>
+<%- include('../partials/dashboard-bottom') %>

@@ -1,0 +1,57 @@
+<%- include('../partials/dashboard-top') %>
+<div class="page-head">
+  <h1>Settings</h1>
+</div>
+<% if (saved) { %><div class="notice">Settings saved.</div><% } %>
+<% if (error) { %><div class="notice notice-error"><%= error %></div><% } %>
+<form method="POST" action="/dashboard/settings">
+  <div class="card">
+    <h2>Blog</h2>
+    <label>Blog title
+      <input type="text" name="blogTitle" value="<%= settings.blogTitle %>">
+    </label>
+    <label>Description
+      <textarea name="blogDescription" rows="3"><%= settings.blogDescription %></textarea>
+    </label>
+    <label>Footer text
+      <input type="text" name="footerText" value="<%= settings.footerText %>">
+    </label>
+  </div>
+  <div class="card">
+    <h2>Social links</h2>
+    <label>Twitter/X URL
+      <input type="url" name="twitter" value="<%= settings.twitter %>" placeholder="https://x.com/you">
+    </label>
+    <label>GitHub URL
+      <input type="url" name="github" value="<%= settings.github %>" placeholder="https://github.com/you">
+    </label>
+    <label>LinkedIn URL
+      <input type="url" name="linkedin" value="<%= settings.linkedin %>" placeholder="https://linkedin.com/in/you">
+    </label>
+  </div>
+  <div class="card">
+    <h2>Integrations</h2>
+    <label>Google Analytics ID
+      <input type="text" name="gaId" value="<%= settings.gaId %>" placeholder="G-XXXXXXXXXX">
+    </label>
+  </div>
+  <div class="card">
+    <h2>Custom domain</h2>
+    <label>Domain
+      <input type="text" name="customDomain" value="<%= currentUser.customDomain || '' %>" placeholder="blog.yourdomain.com">
+    </label>
+    <p class="hint">Point a <strong>CNAME</strong> record for your domain to <code>incblog.incodet.com</code>. Once DNS propagates, requests to your domain will serve your blog.</p>
+  </div>
+  <button class="btn btn-primary" type="submit">Save settings</button>
+</form>
+<div class="card danger-zone">
+  <h2>Danger zone</h2>
+  <p>Deleting your account permanently removes your posts, media, subscribers and settings. This cannot be undone.</p>
+  <form method="POST" action="/dashboard/settings/delete-account" data-confirm="Permanently delete your account and all data?">
+    <label>Type <strong>DELETE</strong> to confirm
+      <input type="text" name="confirm" placeholder="DELETE" required>
+    </label>
+    <button class="btn btn-danger" type="submit">Delete account</button>
+  </form>
+</div>
+<%- include('../partials/dashboard-bottom') %>

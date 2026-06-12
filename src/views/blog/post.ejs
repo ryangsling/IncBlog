@@ -1,0 +1,31 @@
+<%- include('../partials/blog-top', {
+  metaDescription: post.metaDescription || post.excerpt || '',
+  ogTitle: post.metaTitle || post.title,
+  ogImage: post.ogImage || post.featuredImage || ''
+}) %>
+<article class="post">
+  <h1 class="post-title"><%= post.title %></h1>
+  <p class="meta">
+    <%= new Date(post.publishAt || post.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %>
+    · <%= readTime %> min read
+    · <%= post.views %> views
+    <% if (post.Category) { %> · <a href="/blog/<%= user.username %>/category/<%= post.Category.slug %>"><%= post.Category.name %></a><% } %>
+  </p>
+  <% if (post.featuredImage) { %><img class="post-featured" src="<%= post.featuredImage %>" alt="<%= post.title %>"><% } %>
+  <div class="post-content"><%- html %></div>
+  <% if (post.Tags && post.Tags.length) { %>
+  <div class="tag-list">
+    <% post.Tags.forEach(function(t) { %>
+    <a class="tag" href="/blog/<%= user.username %>/tag/<%= t.slug %>">#<%= t.name %></a>
+    <% }) %>
+  </div>
+  <% } %>
+  <div class="author-card card">
+    <% if (user.avatar) { %><img class="avatar" src="<%= user.avatar %>" alt="<%= user.name %>"><% } else { %><div class="avatar avatar-placeholder"><%= user.name.charAt(0).toUpperCase() %></div><% } %>
+    <div>
+      <h3><%= user.name %></h3>
+      <% if (user.bio) { %><p><%= user.bio %></p><% } %>
+    </div>
+  </div>
+</article>
+<%- include('../partials/blog-bottom') %>

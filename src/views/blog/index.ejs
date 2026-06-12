@@ -1,0 +1,19 @@
+<%- include('../partials/blog-top', { metaDescription: settings.blogDescription || '' }) %>
+<% if (locals.subscribed) { %><div class="notice">Thanks for subscribing! 🎉</div><% } %>
+<% if (settings.blogDescription) { %><p class="blog-description"><%= settings.blogDescription %></p><% } %>
+<div class="post-list">
+  <% posts.forEach(function(p) { %>
+  <article class="post-card">
+    <% if (p.featuredImage) { %><a href="/blog/<%= user.username %>/<%= p.slug %>"><img class="post-card-image" src="<%= p.featuredImage %>" alt="<%= p.title %>" loading="lazy"></a><% } %>
+    <h2><a href="/blog/<%= user.username %>/<%= p.slug %>"><%= p.title %></a></h2>
+    <p class="meta">
+      <%= new Date(p.publishAt || p.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+      · <%= readTime(p.content) %> min read
+      <% if (p.Category) { %> · <a href="/blog/<%= user.username %>/category/<%= p.Category.slug %>"><%= p.Category.name %></a><% } %>
+    </p>
+    <% if (p.excerpt) { %><p class="excerpt"><%= p.excerpt %></p><% } %>
+  </article>
+  <% }) %>
+  <% if (!posts.length) { %><p class="empty">No posts yet. Check back soon!</p><% } %>
+</div>
+<%- include('../partials/blog-bottom') %>

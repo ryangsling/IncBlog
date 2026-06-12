@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<%- include('../partials/head') %>
+<title>Log in · IncBlog</title>
+</head>
+<body class="auth">
+<div class="auth-card card">
+  <a class="logo" href="/">Inc<span>Blog</span></a>
+  <h1>Welcome back</h1>
+  <% if (error) { %><div class="notice notice-error"><%= error %></div><% } %>
+  <form method="POST" action="/login">
+    <label>Email
+      <input type="email" name="email" required autofocus>
+    </label>
+    <label>Password
+      <input type="password" name="password" required>
+    </label>
+    <button class="btn btn-primary btn-block" type="submit">Log in</button>
+  </form>
+  <a class="btn btn-ghost btn-block" href="/auth/google">Continue with Google</a>
+  <p class="auth-alt">No account? <a href="/register">Create one</a></p>
+</div>
+</body>
+</html>

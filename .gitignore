@@ -1,0 +1,5 @@
+node_modules/
+.env
+incblog.db
+src/public/uploads/*
+!src/public/uploads/.gitkeep

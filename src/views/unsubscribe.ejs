@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<%- include('partials/head') %>
+<title>Unsubscribe · IncBlog</title>
+</head>
+<body class="auth">
+<div class="auth-card card">
+  <a class="logo" href="/">Inc<span>Blog</span></a>
+  <% if (success) { %>
+    <h1>You're unsubscribed</h1>
+    <p>You won't receive any more emails from this blog. Sorry to see you go!</p>
+  <% } else { %>
+    <h1>Invalid link</h1>
+    <p>This unsubscribe link is invalid or has already been used.</p>
+  <% } %>
+  <a class="btn btn-primary" href="/">Go home</a>
+</div>
+</body>
+</html>
