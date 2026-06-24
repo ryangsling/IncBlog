@@ -161,21 +161,21 @@ Wire transactional emails through Resend in production. Development uses Nodemai
 
 ## Part 5 - XML sitemap and scheduled post cron
 
-**Status:** Pending
+**Status:** Done
 
 Two independent features that make the product complete for SEO and publishing workflow.
 
 ### Tasks
 
 **XML sitemap**
-- [ ] Add route `GET /sitemap.xml` in `src/routes/blog.js`
-- [ ] Controller queries all published posts for the blog (resolved via custom domain or username path), formats a valid XML sitemap with `<loc>`, `<lastmod>`, and `<changefreq>`
-- [ ] Return `Content-Type: application/xml`
+- [x] Add route `GET /sitemap.xml` in `src/routes/blog.js` (already existed)
+- [x] Controller queries all published posts for the blog, formats a valid XML sitemap with `<loc>`, `<lastmod>`, and `<changefreq>`
+- [x] Return `Content-Type: application/xml`
 
 **Scheduled post cron**
-- [ ] Install `node-cron` npm package
-- [ ] Create `src/cron.js`: exports `startCron()` that runs every minute; queries posts where `status = 'scheduled'` and `publishAt <= NOW()`, updates each to `status = 'published'`
-- [ ] Call `startCron()` in `app.js` after `initDb()` resolves
+- [x] Install `node-cron` npm package
+- [x] Create `src/cron.js`: exports `startCron()` that runs every minute; queries posts where `status = 'scheduled'` and `publishAt <= NOW()`, updates each to `status = 'published'`
+- [x] Call `startCron()` in `app.js` after `initDb()` resolves
 
 ### Tests
 
@@ -185,8 +185,8 @@ Two independent features that make the product complete for SEO and publishing w
 
 ### Success criteria
 
-- [ ] Sitemap validates against the sitemap.org schema
-- [ ] Scheduled posts auto-publish within 60 seconds of their `publishAt` time
+- [x] Sitemap validates against the sitemap.org schema
+- [x] Scheduled posts auto-publish within 60 seconds of their `publishAt` time
 
 ---
 
@@ -265,6 +265,9 @@ Establish a test suite covering critical paths.
   - `sitemap.test.js` — sitemap renders valid XML for a user with published posts
   - `cron.test.js` — scheduled post status flip logic (unit test the query + update logic, not the timer)
   - `export.test.js` — export route returns correct JSON shape, excludes sensitive fields
+  - `database.test.js` — verify SQLite dialect works without DATABASE_URL; verify PostgreSQL dialect selected when DATABASE_URL is set; seed runs on both
+  - `upload-r2.test.js` — processImage returns local path when R2_BUCKET is unset; returns R2 URL when R2_BUCKET is set; deleteUploadByUrl removes from R2 in prod mode, local in dev mode (mock S3Client)
+  - `mailer.test.js` — sendMail uses Resend SDK when RESEND_API_KEY is set; falls back to Nodemailer when unset; sendMail returns true on success, false on failure (mock both)
 - [ ] Use an in-memory SQLite database (`:memory:`) for all tests; no network calls; mock R2 and Resend modules
 - [ ] Achieve minimum 80% line coverage across `src/controllers/` and `src/middleware/`
 

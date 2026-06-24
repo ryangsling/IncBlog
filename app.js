@@ -8,6 +8,7 @@ const passport = require('./src/middleware/passport');
 const customDomain = require('./src/middleware/customDomain');
 const { attachUser } = require('./src/middleware/auth');
 const { initDb } = require('./src/models');
+const { startCron } = require('./src/cron');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -66,6 +67,7 @@ app.use((err, req, res, next) => {
 
 initDb()
   .then(() => {
+    startCron();
     app.listen(PORT, () => {
       console.log(`IncBlog running at http://localhost:${PORT}`);
     });

@@ -135,10 +135,10 @@ exports.sitemap = async (req, res, next) => {
     const posts = await publicPosts(ctx.user.id);
     const blogUrl = `${BASE_URL}/blog/${ctx.user.username}`;
     const urls = [
-      `<url><loc>${escapeXml(blogUrl)}</loc></url>`,
+      `<url><loc>${escapeXml(blogUrl)}</loc><changefreq>daily</changefreq></url>`,
       ...posts.map(
         (p) =>
-          `<url><loc>${escapeXml(`${blogUrl}/${p.slug}`)}</loc><lastmod>${new Date(p.updatedAt).toISOString().slice(0, 10)}</lastmod></url>`
+          `<url><loc>${escapeXml(`${blogUrl}/${p.slug}`)}</loc><lastmod>${new Date(p.updatedAt).toISOString().slice(0, 10)}</lastmod><changefreq>weekly</changefreq></url>`
       ),
     ].join('\n');
     res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`);
