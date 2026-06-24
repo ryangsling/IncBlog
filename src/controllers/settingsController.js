@@ -1,5 +1,7 @@
-const { Post, Media, Subscriber, Setting, PageView, Op } = require('../models');
+const { Post, Tag, Category, Subscriber, Setting, PageView, Op } = require('../models');
 const { deleteUploadByUrl } = require('../middleware/upload');
+
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 async function getSettings(userId) {
   const [settings] = await Setting.findOrCreate({ where: { userId }, defaults: { userId } });
@@ -13,6 +15,7 @@ exports.show = async (req, res, next) => {
       title: 'Settings',
       active: 'settings',
       settings,
+      baseUrl: BASE_URL,
       saved: req.query.saved === '1',
       error: req.query.error || null,
     });
@@ -40,6 +43,62 @@ exports.update = async (req, res, next) => {
     await req.user.save();
 
     res.redirect('/dashboard/settings?saved=1');
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.exportData = async (req, res, next) => {
+  try {
+    const user = req.user;
+    const posts = await Post.findAll({
+      where: { userId: user.id },
+      include: [Tag, Category],
+      order: [['updatedAt', 'DESC']],
+    });
+    const subscribers = await Subscriber.findAll({
+      where: { userId: user.id },
+      order: [['subscribedAt', 'DESC']],
+    });
+    const settings = await getSettings(user.id);
+
+    const exportPayload = {
+      exportedAt: new Date().toISOString(),
+      user: { name: user.name, email: user.email, username: user.username, bio: user.bio },
+      settings: {
+        blogTitle: settings.blogTitle,
+        blogDescription: settings.blogDescription,
+        footerText: settings.footerText,
+        twitter: settings.twitter,
+        github: settings.github,
+        linkedin: settings.linkedin,
+        gaId: settings.gaId,
+      },
+      posts: posts.map((p) => ({
+        title: p.title,
+        slug: p.slug,
+        content: p.content,
+        excerpt: p.excerpt,
+        metaTitle: p.metaTitle,
+        metaDescription: p.metaDescription,
+        status: p.status,
+        publishAt: p.publishAt,
+        views: p.views,
+        category: p.Category ? p.Category.name : null,
+        tags: (p.Tags || []).map((t) => t.name),
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt,
+      })),
+      subscribers: subscribers.map((s) => ({
+        email: s.email,
+        status: s.status,
+        subscribedAt: s.subscribedAt,
+      })),
+    };
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', 'attachment; filename="incblog-export.json"');
+    res.send(JSON.stringify(exportPayload, null, 2));
   } catch (err) {
     next(err);
   }

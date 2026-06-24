@@ -6,6 +6,7 @@ router.use(requireAuth);
 
 router.get('/', settings.show);
 router.post('/', settings.update);
+router.get('/export', settings.exportData);
 router.post('/delete-account', settings.deleteAccount);
 
 module.exports = router;

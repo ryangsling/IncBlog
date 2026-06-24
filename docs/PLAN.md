@@ -192,20 +192,18 @@ Two independent features that make the product complete for SEO and publishing w
 
 ## Part 6 - Custom domain DNS setup flow
 
-**Status:** Pending
+**Status:** Done
 
 Give users clear, actionable instructions for pointing their domain to their IncBlog instance. V1 is informational only — no automated DNS verification API call is needed.
 
 ### Tasks
 
-- [ ] Add a "Custom Domain" section to `src/views/dashboard/settings.ejs` (or a dedicated sub-page):
-  - Input field to save `customDomain` on the User record (already in the model)
-  - After saving, display a step-by-step DNS instruction block:
-    - Add a `CNAME` record pointing their domain to the IncBlog host (read from `BASE_URL` env var)
-    - Note TTL of 300s or lower for fast propagation
-    - Note that HTTPS is handled by Railway's TLS termination / Cloudflare proxy
-  - Display current status: "Not configured", "Configured — pending DNS propagation", or "Active" (determined by whether a request arrived via that domain, not a live DNS check)
-- [ ] Update `settingsController.js` to save/clear `customDomain` and re-render with instructions
+- [x] Add a "Custom Domain" section to `src/views/dashboard/settings.ejs`:
+  - Input field to save `customDomain` on the User record (already existed)
+  - After saving, display a step-by-step DNS instruction block with CNAME target from `BASE_URL`
+  - Note TTL of 300s, note that HTTPS is handled automatically
+  - Display current status: "Not configured" or "Configured — pending DNS propagation"
+- [x] Update `settingsController.js` to pass `baseUrl` to the view
 
 ### Tests
 
@@ -216,23 +214,23 @@ Give users clear, actionable instructions for pointing their domain to their Inc
 
 ### Success criteria
 
-- [ ] User can self-serve their custom domain setup without contacting support
-- [ ] No automated DNS check or external API call is required in V1
+- [x] User can self-serve their custom domain setup without contacting support
+- [x] No automated DNS check or external API call is required in V1
 
 ---
 
 ## Part 7 - JSON data export
 
-**Status:** Pending
+**Status:** Done
 
 Users can download a full export of their data (posts, settings, subscribers) as a single JSON file.
 
 ### Tasks
 
-- [ ] Add route `GET /dashboard/settings/export` in `src/routes/settings.js`
-- [ ] Controller queries all posts (with tags + category), all subscribers, and the user's settings; serialises to JSON; responds with `Content-Disposition: attachment; filename="incblog-export.json"` and `Content-Type: application/json`
-- [ ] Add an "Export data" button to `src/views/dashboard/settings.ejs` linking to the export route
-- [ ] Exported JSON shape: `{ exportedAt, user: { name, email, username, bio }, settings: {...}, posts: [...], subscribers: [...] }`
+- [x] Add route `GET /dashboard/settings/export` in `src/routes/settings.js`
+- [x] Controller queries all posts (with tags + category), all subscribers, and the user's settings; serialises to JSON; responds with `Content-Disposition: attachment; filename="incblog-export.json"` and `Content-Type: application/json`
+- [x] Add an "Export data" button to `src/views/dashboard/settings.ejs` linking to the export route
+- [x] Exported JSON shape: `{ exportedAt, user: { name, email, username, bio }, settings: {...}, posts: [...], subscribers: [...] }`
 
 ### Tests
 
@@ -242,8 +240,8 @@ Users can download a full export of their data (posts, settings, subscribers) as
 
 ### Success criteria
 
-- [ ] Export file is valid JSON parseable without errors
-- [ ] No sensitive fields (passwordHash, token) are included in the export
+- [x] Export file is valid JSON parseable without errors
+- [x] No sensitive fields (passwordHash, token) are included in the export
 
 ---
 

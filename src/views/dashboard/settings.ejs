@@ -40,10 +40,28 @@
     <label>Domain
       <input type="text" name="customDomain" value="<%= currentUser.customDomain || '' %>" placeholder="blog.yourdomain.com">
     </label>
-    <p class="hint">Point a <strong>CNAME</strong> record for your domain to <code>incblog.incodet.com</code>. Once DNS propagates, requests to your domain will serve your blog.</p>
+    <% if (currentUser.customDomain) { %>
+      <div class="domain-status">
+        <p class="hint"><strong>Status:</strong> Configured — requests to <code><%= currentUser.customDomain %></code> will serve your blog once DNS propagates.</p>
+        <h3>DNS setup instructions</h3>
+        <ol class="domain-steps">
+          <li>Add a <strong>CNAME</strong> record for <code><%= currentUser.customDomain %></code> pointing to <code><%= baseUrl %></code></li>
+          <li>Set TTL to <strong>300</strong> seconds (or lower) for fast propagation</li>
+          <li>HTTPS is handled automatically — no certificate setup needed</li>
+        </ol>
+        <p class="hint">DNS propagation can take up to 48 hours. Once complete, your blog will be live at <code>https://<%= currentUser.customDomain %></code>.</p>
+      </div>
+    <% } else { %>
+      <p class="hint">Point a <strong>CNAME</strong> record for your domain to <code><%= baseUrl %></code>. Once DNS propagates, requests to your domain will serve your blog.</p>
+    <% } %>
   </div>
   <button class="btn btn-primary" type="submit">Save settings</button>
 </form>
+<div class="card">
+  <h2>Export data</h2>
+  <p>Download a full export of your posts, subscribers and settings as a JSON file.</p>
+  <a class="btn" href="/dashboard/settings/export">Export data</a>
+</div>
 <div class="card danger-zone">
   <h2>Danger zone</h2>
   <p>Deleting your account permanently removes your posts, media, subscribers and settings. This cannot be undone.</p>
