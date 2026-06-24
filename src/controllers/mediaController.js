@@ -41,8 +41,7 @@ exports.destroy = async (req, res, next) => {
   try {
     const item = await Media.findOne({ where: { id: req.params.id, userId: req.user.id } });
     if (item) {
-      deleteUploadByUrl(item.url);
-      deleteUploadByUrl(item.thumbUrl);
+      await Promise.all([deleteUploadByUrl(item.url), deleteUploadByUrl(item.thumbUrl)]);
       await item.destroy();
     }
     res.redirect('/dashboard/media');

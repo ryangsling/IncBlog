@@ -1,7 +1,13 @@
 const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
+
+const RESEND_API_KEY = process.env.RESEND_API_KEY;
+const RESEND_FROM = process.env.RESEND_FROM || 'IncBlog <no-reply@incblog.incodet.com>';
+
+const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
 let transporter = null;
-if (process.env.SMTP_HOST) {
+if (!RESEND_API_KEY && process.env.SMTP_HOST) {
   transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT || 587),
@@ -13,14 +19,13 @@ if (process.env.SMTP_HOST) {
 }
 
 async function sendMail({ to, subject, html }) {
-  if (!transporter) return false;
   try {
-    await transporter.sendMail({
-      from: process.env.SMTP_USER || 'no-reply@incblog.incodet.com',
-      to,
-      subject,
-      html,
-    });
+    if (resend) {
+      await resend.emails.send({ from: RESEND_FROM, to, subject, html });
+      return true;
+    }
+    if (!transporter) return false;
+    await transporter.sendMail({ from: RESEND_FROM, to, subject, html });
     return true;
   } catch (err) {
     console.error('Mail error:', err.message);

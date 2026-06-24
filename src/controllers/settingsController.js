@@ -58,20 +58,18 @@ exports.deleteAccount = async (req, res, next) => {
       await PageView.destroy({ where: { postId: { [Op.in]: postIds } } });
     }
     for (const post of posts) {
-      deleteUploadByUrl(post.featuredImage);
-      deleteUploadByUrl(post.ogImage);
+      await Promise.all([deleteUploadByUrl(post.featuredImage), deleteUploadByUrl(post.ogImage)]);
     }
     await Post.destroy({ where: { userId }, force: true });
 
     const media = await Media.findAll({ where: { userId } });
     for (const item of media) {
-      deleteUploadByUrl(item.url);
-      deleteUploadByUrl(item.thumbUrl);
+      await Promise.all([deleteUploadByUrl(item.url), deleteUploadByUrl(item.thumbUrl)]);
     }
     await Media.destroy({ where: { userId } });
     await Subscriber.destroy({ where: { userId } });
     await Setting.destroy({ where: { userId } });
-    deleteUploadByUrl(req.user.avatar);
+    await deleteUploadByUrl(req.user.avatar);
     await req.user.destroy();
 
     res.clearCookie('token');

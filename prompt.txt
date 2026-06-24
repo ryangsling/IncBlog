@@ -1,0 +1,83 @@
+//ignore this file when plan is approved and agent has started coding part 1 or beyond
+
+I am starting a new software project. Here is a description of what I want to build:
+
+[PROJECT: IncBlog
+Company: incodet.com
+Product URL: incblog.incodet.com (or incblog.com)
+
+IncBlog is a SaaS blogging platform targeting developers, indie makers, and solopreneurs. It is a white-label, self-hostable blogging engine where users get their own blog under a custom domain.
+
+TECH STACK PREFERENCE:
+- Base: Ghost CMS (open source, MIT license) as the foundation
+- Frontend: Custom theme (minimal, dark-mode first, monospace accent)
+- Backend: Ghost's existing Node.js backend, extended with custom APIs
+- Database: PostgreSQL
+- Media Storage: Cloudflare R2
+- Hosting: Railway.app
+- Email: Resend.com
+- AI: Claude API (Anthropic) for writing features
+
+CORE MVP FEATURES (V1 — ship first):
+1. Authentication — email + Google OAuth, user profile (name, bio, avatar)
+2. Post Editor — Markdown + WYSIWYG toggle, draft/publish/scheduled states
+3. Content Organization — tags and categories per post
+4. Media Library — image upload, auto WebP conversion
+5. SEO — custom meta title, description, OG image per post, auto XML sitemap
+6. Custom Domain — users connect their own domain to their blog
+7. Basic Analytics — total views, per-post view count
+8. Theme — 1 clean default theme with light/dark mode, fully mobile responsive
+9. AI Feature — one-click AI-generated excerpt/summary per post using Claude API
+
+POST-MVP FEATURES (V2, after first users):
+- Social auto-posting (Facebook, X/Twitter) on publish
+- Newsletter + subscriber management with CSV export
+- Revision history + version restore
+- Multi-author support with role-based permissions (Admin, Editor, Author)
+- WordPress import
+- REST API for headless usage
+- Monetization (paid posts, tips, subscriptions)
+- Template/theme marketplace
+- Claude + GPT-4o model choice for AI features (not just one model)
+- Poll / interactive content blocks
+- Mobile app
+
+DIFFERENTIATION FROM COMPETITORS (e.g. TyroPress, Ghost Pro, Hashnode):
+- Multi-model AI (user brings their own API key — Claude, GPT, Gemini)
+- Social auto-posting built-in from V2
+- Developer-first aesthetic and API
+- Targeting South Asian market (Bangla font support, local payment gateways in V2)
+- Data portability: full JSON export + re-import from day one
+- No vendor lock-in: open architecture
+
+BUSINESS MODEL:
+- Free tier: 1 blog, basic features, incblog.incodet.com subdomain
+- Pro tier ($X/mo): custom domain, AI features, analytics, priority support
+- Team tier: multi-author, advanced permissions
+
+TASK:
+Plan the full development roadmap for IncBlog MVP. Break it into weekly milestones starting from Ghost CMS setup to a fully deployable MVP. For each milestone, list specific technical tasks the development agent should complete. Prioritize tasks so the product is functional and demo-able as early as possible.]
+
+---
+
+You will find two template files in this repo:
+- AGENTS.md (project root)
+- docs/PLAN.md
+
+Your first and only task right now is to rewrite both of these files to match my specific project. Do not write any code yet.
+
+For AGENTS.md:
+- Replace all placeholder sections with real, specific content for this project
+- Fill in business requirements, key features, MVP limitations, technical decisions, starting point, color scheme, and any project-specific coding standards
+- Make reasonable technical choices (framework, database, packaging) that suit the project type and scale
+- Keep the coding standards section exactly as written — do not change it
+
+For docs/PLAN.md:
+- Replace all placeholders with a real, phase-by-phase implementation plan for this specific project
+- Part 1 must always be the planning hard gate (keep its structure exactly)
+- Add as many parts as needed to cover the full MVP build, each with: Tasks, Tests, and Success criteria
+- Make the plan granular enough that any engineer could execute it phase-by-phase without ambiguity
+- Wherever a part requires a manual human action (account creation, API key setup, external dashboard config, deployment, etc.), insert a PAUSE block immediately before or after that part — list every manual step with exact URLs and file paths, then instruct the developer to confirm before the agent continues; do NOT attempt to automate or skip these steps
+
+
+When done, present both updated files in full and wait for my explicit approval before writing any code.
