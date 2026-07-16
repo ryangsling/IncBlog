@@ -179,11 +179,20 @@ const SAMPLE_POSTS = [
 ];
 
 async function seed() {
+  // Idempotent default categories — safe to ensure in any environment
+  // (findOrCreate is a no-op once they exist); the post-form category dropdown relies on them.
   for (const name of CATEGORY_NAMES) {
     await Category.findOrCreate({
       where: { slug: slugify(name, { lower: true }) },
       defaults: { name, slug: slugify(name, { lower: true }) },
     });
+  }
+
+  // The demo user (demo@incblog.com / demo1234) is a known-password admin account.
+  // Never seed it in production — a live, customer-facing site must not ship a
+  // guessable admin login. Opt back in for a throwaway staging demo with SEED_DEMO_IN_PROD=1.
+  if (process.env.NODE_ENV === 'production' && process.env.SEED_DEMO_IN_PROD !== '1') {
+    return;
   }
 
   const userCount = await User.count();
@@ -232,10 +241,17 @@ async function seed() {
 }
 
 async function initDb() {
-  // ponytail: alter:true is fragile on SQLite (FK + ENUM changes force full rebuilds that fail).
-  // Dev uses SQLite only — reset on start and reseed. Prod uses Postgres + alter to preserve data.
+  // Dev/test (SQLite, disposable): force:true drops & recreates every boot, then reseeds.
+  // Prod (SQLite + persistent disk): create-if-missing only — never force-drop, never ALTER.
+  // SQLite ALTER is fragile (FK + ENUM changes force full rebuilds that corrupt data), and a
+  // destructive sync on a redeploy would wipe the blog. Schema changes after launch need a
+  // real migration, not { alter: true }. Tracks that the prod target is SQLite, not Postgres.
   const isProd = process.env.NODE_ENV === 'production';
-  await sequelize.sync({ force: !isProd, alter: isProd });
+  if (isProd) {
+    await sequelize.sync(); // { force: false, alter: false } — create tables if missing only
+  } else {
+    await sequelize.sync({ force: true });
+  }
   await seed();
 }
 

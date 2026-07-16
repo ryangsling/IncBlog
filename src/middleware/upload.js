@@ -5,7 +5,13 @@ const multer = require('multer');
 const sharp = require('sharp');
 const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 
-const UPLOAD_DIR = path.join(__dirname, '..', 'public', 'uploads');
+// Default to the in-tree public dir so dev "just works" and express.static
+// (mounted on src/public in app.js) serves uploads at /uploads/... . In prod on a
+// PaaS with a persistent volume (Fly.io, see FLY.md), set UPLOAD_DIR=/data/uploads
+// so media survives redeploys — app.js then mounts that path at /uploads separately.
+const UPLOAD_DIR = process.env.UPLOAD_DIR
+  ? path.resolve(process.env.UPLOAD_DIR)
+  : path.join(__dirname, '..', 'public', 'uploads');
 fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const ALLOWED = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];

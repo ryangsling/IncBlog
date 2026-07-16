@@ -1,0 +1,47 @@
+# Fly.io deployment config for IncBlog (SQLite + persistent volume).
+# Free-tier friendly: one shared-cpu machine, autoscale-to-zero, persistent disk.
+#
+# Stack recap (so the next person doesn't re-derive it):
+#   - Node 24 (see Dockerfile), plain CommonJS — no build step. `node app.js` is runtime.
+#   - SQLite on a persistent volume at /data so the DB survives redeploys.
+#     DATABASE_FILE=/data/incblog.db (set as a secret in FLY.md).
+#     Models use create-only sync in prod — see src/models/index.js initDb().
+#   - Media uploads on the same volume at /data/uploads; UPLOAD_DIR env points the
+#     app there and app.js mounts it at /uploads so image URLs are unchanged.
+#     (Flip on Cloudflare R2 later by setting R2_* secrets — volume goes unused.)
+#   - trust proxy is enabled in app.js so req.protocol is correct behind Fly's proxy.
+#   - BASE_URL enforced in prod by src/config/site.js (refuses localhost) so email
+#     links and the Google OAuth callbackURL can never ship as localhost.
+
+app = "incblog"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  # Free-tier: stop the machine when idle, spin it back up on a request.
+  # SQLite needs a single instance — min_machines_running must stay 0 and you
+  # must NOT scale to >1 machine (SQLite isn't safe across multiple processes).
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    hard_limit = 250
+    soft_limit = 200
+
+# Persistent volume. Create it once with: fly volumes create incblog_data
+# (see FLY.md). On first deploy Fly auto-creates it from initial_size below.
+[[mounts]]
+  source = "incblog_data"
+  destination = "/data"
+  initial_size = "1gb"
+
+# Cheapest shared CPU. Bump to shared-cpu-2x if uploads/Sharp feel slow.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"

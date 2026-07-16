@@ -3,8 +3,7 @@ const { Post, Category, Tag, Subscriber, Setting, User, Op } = require('../model
 const { processImage } = require('../middleware/upload');
 const { sendMail } = require('../middleware/mailer');
 const { sanitizePostHtml } = require('../middleware/sanitize');
-
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const { baseUrl: BASE_URL } = require('../config/site');
 
 const STATUSES = ['draft', 'published', 'scheduled'];
 const FORMATS = ['markdown', 'html', 'plain'];

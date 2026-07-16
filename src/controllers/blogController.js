@@ -1,8 +1,7 @@
 const crypto = require('crypto');
 const { marked } = require('marked');
 const { User, Post, Tag, Category, PageView, Setting, Subscriber, publishedWhere } = require('../models');
-
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const { baseUrl: BASE_URL } = require('../config/site');
 
 function readTime(content) {
   const words = (content || '').trim().split(/\s+/).filter(Boolean).length;

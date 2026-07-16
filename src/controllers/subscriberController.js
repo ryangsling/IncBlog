@@ -1,8 +1,7 @@
 const crypto = require('crypto');
 const { User, Subscriber, Setting, Post, Category, Tag, Op, publishedWhere } = require('../models');
 const { sendMail } = require('../middleware/mailer');
-
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const { baseUrl: BASE_URL } = require('../config/site');
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 exports.subscribe = async (req, res, next) => {

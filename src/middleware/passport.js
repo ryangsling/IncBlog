@@ -3,6 +3,7 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const slugify = require('slugify');
 const { User, Setting } = require('../models');
 const { uniqueUsername } = require('../controllers/authController');
+const { baseUrl } = require('../config/site');
 
 const googleEnabled = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 
@@ -12,7 +13,7 @@ if (googleEnabled) {
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: `${process.env.BASE_URL || 'http://localhost:3000'}/auth/google/callback`,
+        callbackURL: `${baseUrl}/auth/google/callback`,
       },
       async (accessToken, refreshToken, profile, done) => {
         try {

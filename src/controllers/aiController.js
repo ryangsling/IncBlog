@@ -1,6 +1,6 @@
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 const MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-oss-120b:free';
-const SITE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const { baseUrl: SITE_URL } = require('../config/site');
 
 async function complete(prompt, maxTokens = 500) {
   if (!OPENROUTER_API_KEY) {

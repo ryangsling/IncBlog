@@ -17,6 +17,11 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'src', 'views'));
 app.disable('x-powered-by');
 
+// PaaS hosts (Fly.io, Railway, Render, …) terminate TLS at a reverse proxy. Trust it
+// so req.protocol/secured reflects the client's scheme and session/secure cookies
+// are not coerced to http behind the proxyboat.
+app.enable('trust proxy');
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
@@ -30,6 +35,12 @@ app.use(
 );
 app.use(passport.initialize());
 app.use(express.static(path.join(__dirname, 'src', 'public')));
+// When UPLOAD_DIR is overridden to a persistent volume (e.g. /data/uploads on Fly),
+// mount it at /uploads so image URLs (/uploads/<file>) keep working while the
+// underlying bytes live on a volume that survives redeploys. No-op in dev.
+if (process.env.UPLOAD_DIR) {
+  app.use('/uploads', express.static(process.env.UPLOAD_DIR));
+}
 app.use(customDomain);
 app.use(attachUser);
 

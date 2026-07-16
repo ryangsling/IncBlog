@@ -1,7 +1,6 @@
 const { Post, Tag, Category, Subscriber, Setting, PageView, Op } = require('../models');
 const { deleteUploadByUrl } = require('../middleware/upload');
-
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const { baseUrl: BASE_URL } = require('../config/site');
 
 async function getSettings(userId) {
   const [settings] = await Setting.findOrCreate({ where: { userId }, defaults: { userId } });

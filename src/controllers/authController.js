@@ -4,8 +4,7 @@ const slugify = require('slugify');
 const { User, Setting } = require('../models');
 const { setAuthCookie } = require('../middleware/auth');
 const { sendMail } = require('../middleware/mailer');
-
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const { baseUrl: BASE_URL } = require('../config/site');
 
 async function uniqueUsername(base) {
   const root = base || 'writer';
