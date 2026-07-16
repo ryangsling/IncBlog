@@ -46,13 +46,20 @@
     type: 'bar',
     data: {
       labels: DAILY.map(d => d.date.slice(5)),
-      datasets: [{ label: 'Views', data: DAILY.map(d => d.count), backgroundColor: '#3b82f6', borderRadius: 3 }]
+      datasets: [{
+        label: 'Views',
+        data: DAILY.map(d => d.count),
+        backgroundColor: '#d97757',
+        hoverBackgroundColor: '#c6613f',
+        borderRadius: 4,
+        borderSkipped: false
+      }]
     },
     options: {
-      plugins: { legend: { display: false } },
+      plugins: { legend: { display: false }, tooltip: { backgroundColor: '#141413', titleFont: { family: 'Inter, sans-serif' }, bodyFont: { family: 'Inter, sans-serif' } } },
       scales: {
-        x: { grid: { color: '#2a2a2a' }, ticks: { color: '#9ca3af' } },
-        y: { beginAtZero: true, grid: { color: '#2a2a2a' }, ticks: { color: '#9ca3af', precision: 0 } }
+        x: { grid: { color: '#cccbc8' }, ticks: { color: '#87867f', font: { family: 'Inter, sans-serif', size: 12 } } },
+        y: { beginAtZero: true, grid: { color: '#cccbc8' }, ticks: { color: '#87867f', precision: 0, font: { family: 'Inter, sans-serif', size: 12 } } }
       }
     }
   });

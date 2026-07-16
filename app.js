@@ -39,12 +39,15 @@ app.get('/', (req, res) => {
   res.render('landing');
 });
 
+app.get('/explore', require('./src/controllers/blogController').explore);
+
 app.use('/', require('./src/routes/auth'));
 app.use('/dashboard', require('./src/routes/dashboard'));
 app.use('/dashboard/posts', require('./src/routes/posts'));
 app.use('/dashboard/media', require('./src/routes/media'));
 app.use('/dashboard/analytics', require('./src/routes/analytics'));
 app.use('/dashboard/subscribers', require('./src/routes/subscribers'));
+app.use('/dashboard/following', require('./src/routes/following'));
 app.use('/dashboard/settings', require('./src/routes/settings'));
 app.use('/api/ai', require('./src/routes/ai'));
 app.use('/', require('./src/routes/blog'));
@@ -68,6 +71,7 @@ app.use((err, req, res, next) => {
 initDb()
   .then(() => {
     startCron();
+    if (process.env.NODE_ENV === 'test') return; // ponytail: don't bind a port under test
     app.listen(PORT, () => {
       console.log(`IncBlog running at http://localhost:${PORT}`);
     });

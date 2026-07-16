@@ -4,9 +4,20 @@
 <%- include('head') %>
 <title><%= title %></title>
 <% if (locals.metaDescription) { %><meta name="description" content="<%= metaDescription %>"><% } %>
-<% if (locals.ogTitle) { %><meta property="og:title" content="<%= ogTitle %>"><% } %>
-<% if (locals.metaDescription) { %><meta property="og:description" content="<%= metaDescription %>"><% } %>
-<% if (locals.ogImage) { %><meta property="og:image" content="<%= ogImage %>"><% } %>
+<% if (locals.ogTitle) { %>
+<meta property="og:title" content="<%= ogTitle %>">
+<meta name="twitter:title" content="<%= ogTitle %>">
+<% } %>
+<% if (locals.metaDescription) { %>
+<meta property="og:description" content="<%= metaDescription %>">
+<meta name="twitter:description" content="<%= metaDescription %>">
+<% } %>
+<% if (locals.ogImage) { %>
+<meta property="og:image" content="<%= ogImage %>">
+<meta name="twitter:image" content="<%= ogImage %>">
+<% } %>
+<meta property="og:type" content="article">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="alternate" type="application/rss+xml" title="RSS" href="/blog/<%= user.username %>/rss.xml">
 <% if (settings.gaId) { %>
 <script async src="https://www.googletagmanager.com/gtag/js?id=<%= settings.gaId %>"></script>
@@ -17,7 +28,10 @@
 <header class="blog-header">
   <div class="container">
     <a class="logo" href="/blog/<%= user.username %>"><%= settings.blogTitle || (user.name + "'s Blog") %></a>
-    <button id="theme-toggle" class="btn btn-ghost" type="button" aria-label="Toggle theme">◐</button>
+    <div>
+      <a class="btn btn-ghost btn-sm" href="/explore">Explore</a>
+      <a class="btn btn-ghost btn-sm" href="/blog/<%= user.username %>/rss.xml">RSS</a>
+    </div>
   </div>
 </header>
 <main class="container blog-main">

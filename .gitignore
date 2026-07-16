@@ -3,3 +3,6 @@ node_modules/
 incblog.db
 src/public/uploads/*
 !src/public/uploads/.gitkeep
+
+# Test coverage output
+coverage/

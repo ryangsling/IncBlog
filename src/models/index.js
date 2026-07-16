@@ -26,6 +26,8 @@ const User = sequelize.define(
     avatar: { type: DataTypes.STRING },
     customDomain: { type: DataTypes.STRING },
     googleId: { type: DataTypes.STRING },
+    emailVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
+    emailVerifyToken: { type: DataTypes.STRING, unique: true },
   },
   { tableName: 'users' }
 );
@@ -54,6 +56,7 @@ const Post = sequelize.define(
     status: { type: DataTypes.ENUM('draft', 'published', 'scheduled'), defaultValue: 'draft' },
     publishAt: { type: DataTypes.DATE },
     views: { type: DataTypes.INTEGER, defaultValue: 0 },
+    format: { type: DataTypes.ENUM('markdown', 'html', 'plain'), defaultValue: 'markdown' },
   },
   { tableName: 'posts', paranoid: true }
 );
@@ -95,10 +98,11 @@ const PageView = sequelize.define(
 const Subscriber = sequelize.define(
   'Subscriber',
   {
-    email: { type: DataTypes.STRING, allowNull: false },
+    email: { type: DataTypes.STRING, allowNull: true },
     status: { type: DataTypes.ENUM('active', 'unsubscribed'), defaultValue: 'active' },
     token: { type: DataTypes.STRING, unique: true },
     subscribedAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
+    followerId: { type: DataTypes.INTEGER, allowNull: true },
   },
   { tableName: 'subscribers' }
 );
@@ -130,6 +134,8 @@ Post.hasMany(PageView, { foreignKey: 'postId', onDelete: 'CASCADE' });
 PageView.belongsTo(Post, { foreignKey: 'postId' });
 User.hasMany(Subscriber, { foreignKey: 'userId', onDelete: 'CASCADE' });
 Subscriber.belongsTo(User, { foreignKey: 'userId' });
+User.hasMany(Subscriber, { as: 'followers', foreignKey: 'followerId', onDelete: 'CASCADE' });
+Subscriber.belongsTo(User, { as: 'Follower', foreignKey: 'followerId' });
 User.hasOne(Setting, { foreignKey: 'userId', onDelete: 'CASCADE' });
 Setting.belongsTo(User, { foreignKey: 'userId' });
 
@@ -189,6 +195,7 @@ async function seed() {
     passwordHash: bcrypt.hashSync('demo1234', 10),
     username: 'demo',
     bio: 'Writer of the IncBlog demo blog. I write about tech, design and growing things on the internet.',
+    emailVerified: true,
   });
 
   await Setting.create({
@@ -225,7 +232,10 @@ async function seed() {
 }
 
 async function initDb() {
-  await sequelize.sync();
+  // ponytail: alter:true is fragile on SQLite (FK + ENUM changes force full rebuilds that fail).
+  // Dev uses SQLite only — reset on start and reseed. Prod uses Postgres + alter to preserve data.
+  const isProd = process.env.NODE_ENV === 'production';
+  await sequelize.sync({ force: !isProd, alter: isProd });
   await seed();
 }
 

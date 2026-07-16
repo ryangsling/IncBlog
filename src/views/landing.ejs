@@ -2,31 +2,191 @@
 <html lang="en">
 <head>
 <%- include('partials/head') %>
-<title>IncBlog · Blogging by incodet.com</title>
+<title>IncBlog — Blogging platform for developers</title>
+<meta name="description" content="A focused blogging platform with Markdown editing, AI writing tools, custom domains, and built-in analytics. By incodet.com.">
 </head>
 <body class="landing">
-<header class="blog-header">
-  <div class="container">
+<header class="site-header">
+  <div class="site-header-inner">
     <a class="logo" href="/">Inc<span>Blog</span></a>
-    <nav class="landing-nav">
+    <nav class="site-nav">
+      <a href="/explore">Explore</a>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
       <a href="/login">Log in</a>
-      <a class="btn btn-primary" href="/register">Get started</a>
+      <a class="btn btn-primary btn-sm" href="/register">Get started</a>
     </nav>
   </div>
 </header>
-<main class="container hero">
-  <h1>Write. Publish. Grow.</h1>
-  <p class="hero-sub">IncBlog is a focused blogging platform with an AI-assisted Markdown editor, built-in analytics and a newsletter — by incodet.com.</p>
-  <div class="hero-actions">
-    <a class="btn btn-primary" href="/register">Start your blog</a>
-    <a class="btn btn-ghost" href="/blog/demo">See a demo blog</a>
+
+<main>
+
+<!-- Hero — asymmetric: sans headline left, serif paragraph right -->
+<section class="hero">
+  <div class="container-wide">
+    <div class="hero-grid">
+      <div>
+        <h1>Your blog.<br>Your domain.<br>Your <a href="#features">words</a>.</h1>
+      </div>
+      <div>
+        <p class="hero-sub">A fast, focused blogging platform built for developers and writers who want full control. Markdown editor, AI writing tools, custom domains, analytics — all in one place.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary btn-lg" href="/register">Start for free</a>
+          <a class="btn btn-ghost btn-lg" href="/blog/demo">See the demo →</a>
+        </div>
+        <p class="hero-note">No credit card required. Set up in under two minutes.</p>
+      </div>
+    </div>
   </div>
-  <div class="stat-cards hero-features">
-    <div class="card"><h3>AI writing tools</h3><p>Generate excerpts, summaries and better titles with Claude.</p></div>
-    <div class="card"><h3>Analytics</h3><p>Daily views, top posts and per-post stats out of the box.</p></div>
-    <div class="card"><h3>Newsletter</h3><p>Collect subscribers and export them anytime as CSV.</p></div>
+</section>
+
+<!-- Features — one wide featured card on manilla, then compact cards -->
+<section id="features" class="features-section">
+  <div class="container-wide">
+    <div class="section-header">
+      <h2>Everything you need to publish</h2>
+      <p>No plugins, no maintenance, no theme updates. Just write.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-item feature-wide">
+        <div class="feature-icon">&#9998;</div>
+        <h3>Markdown editor with live preview</h3>
+        <p>Write in Markdown, see your post take shape in real time. Focus mode, syntax highlighting, and a clean interface that stays out of your way.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">&#9733;</div>
+        <h3>AI writing assist</h3>
+        <p>One-click excerpt generation, title suggestions, and post summaries powered by Claude. Not a replacement for your voice — a nudge when you need one.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">&#8962;</div>
+        <h3>Custom domains</h3>
+        <p>Point your domain to your blog with a simple CNAME record. HTTPS handled automatically. Your blog lives at your URL, not ours.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">&#9783;</div>
+        <h3>Media library</h3>
+        <p>Drag-and-drop image uploads with automatic WebP conversion and thumbnail generation. Serve fast images without thinking about formats.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">&#9781;</div>
+        <h3>Built-in analytics</h3>
+        <p>Daily views, per-post stats, and a 30-day chart in your dashboard. No Google Analytics, no tracking scripts, no privacy headaches.</p>
+      </div>
+      <div class="feature-item">
+        <div class="feature-icon">&#9993;</div>
+        <h3>Subscriber collection</h3>
+        <p>A subscribe form on every public post. Collect email addresses, export as CSV. Newsletter delivery coming soon.</p>
+      </div>
+    </div>
   </div>
+</section>
+
+<!-- How it works — grid flow -->
+<section class="how-section">
+  <div class="container-wide">
+    <div class="section-header">
+      <h2>From zero to live in three steps</h2>
+    </div>
+    <div class="how-steps">
+      <div class="how-step">
+        <span class="how-number">1</span>
+        <h3>Sign up</h3>
+        <p>Choose a username and you're in. No credit card, no onboarding wizard, no 14-step setup.</p>
+      </div>
+      <div class="how-step">
+        <span class="how-number">2</span>
+        <h3>Write</h3>
+        <p>Open the editor, write in Markdown. Add images, categories, tags. Use AI to polish your excerpt. Save as draft until you're ready.</p>
+      </div>
+      <div class="how-step">
+        <span class="how-number">3</span>
+        <h3>Publish</h3>
+        <p>Hit publish and your post is live at your domain. Share the link, watch the analytics, collect subscribers.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing — two tiers, Pro on manilla featured surface -->
+<section id="pricing" class="pricing-section">
+  <div class="container-wide">
+    <div class="section-header">
+      <h2>Simple pricing</h2>
+      <p>Start free. Upgrade when you need your own domain.</p>
+    </div>
+    <div class="pricing-grid">
+      <div class="pricing-card">
+        <h3>Free</h3>
+        <p class="pricing-price">$0</p>
+        <p class="pricing-period">forever</p>
+        <ul class="pricing-features">
+          <li>1 blog</li>
+          <li>yourname.incblog.app subdomain</li>
+          <li>Unlimited posts</li>
+          <li>Markdown editor</li>
+          <li>AI writing assist</li>
+          <li>Analytics</li>
+          <li>Subscriber collection</li>
+        </ul>
+        <a class="btn btn-block" href="/register">Get started</a>
+      </div>
+      <div class="pricing-card pricing-card-accent">
+        <h3>Pro</h3>
+        <p class="pricing-price">$8</p>
+        <p class="pricing-period">per month</p>
+        <ul class="pricing-features">
+          <li>Everything in Free</li>
+          <li>Custom domain</li>
+          <li>Automatic HTTPS</li>
+          <li>Priority support</li>
+        </ul>
+        <a class="btn btn-primary btn-block" href="/register">Start with Pro</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA strip on manilla featured surface -->
+<section class="cta-section">
+  <div class="container-wide">
+    <h2>Start writing today</h2>
+    <p>Join developers and writers who publish with IncBlog. Free to start, no strings attached.</p>
+    <a class="btn btn-primary btn-lg" href="/register">Create your blog →</a>
+  </div>
+</section>
+
 </main>
-<script src="/js/theme.js"></script>
+
+<!-- Dark footer — the system's only inversion surface -->
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <div>
+      <a class="logo" href="/">Inc<span>Blog</span></a>
+      <p class="site-footer-tagline">A focused blogging platform by <a href="https://incodet.com" style="color: var(--color-cloud-medium);">incodet.com</a>.</p>
+    </div>
+    <div class="site-footer-cols">
+      <div class="site-footer-col">
+        <h4>Product</h4>
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="/blog/demo">Demo blog</a>
+      </div>
+      <div class="site-footer-col">
+        <h4>Company</h4>
+        <a href="https://github.com/incodet" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:hello@incodet.com">Contact</a>
+        <a href="https://incodet.com" target="_blank" rel="noopener">incodet.com</a>
+      </div>
+      <div class="site-footer-col">
+        <h4>Account</h4>
+        <a href="/login">Log in</a>
+        <a href="/register">Create account</a>
+      </div>
+      <p class="site-footer-copy">&copy; 2026 incodet.com. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+
 </body>
 </html>

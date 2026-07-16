@@ -1,6 +1,11 @@
 <%- include('../partials/blog-top', { metaDescription: settings.blogDescription || '' }) %>
-<% if (locals.subscribed) { %><div class="notice">Thanks for subscribing! 🎉</div><% } %>
+<% if (locals.subscribed) { %><div class="notice">Thanks for subscribing.</div><% } %>
 <% if (settings.blogDescription) { %><p class="blog-description"><%= settings.blogDescription %></p><% } %>
+<% if (locals.currentUser && currentUser.id !== user.id) { %>
+<form method="POST" action="/blog/<%= user.username %>/<%= isFollowing ? 'unfollow' : 'follow' %>" style="margin-bottom: var(--spacing-16);">
+  <button class="btn <%= isFollowing ? 'btn-ghost' : 'btn-primary' %> btn-sm" type="submit"><%= isFollowing ? 'Unfollow' : '+ Follow' %></button>
+</form>
+<% } %>
 <div class="post-list">
   <% posts.forEach(function(p) { %>
   <article class="post-card">

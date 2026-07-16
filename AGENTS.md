@@ -4,13 +4,13 @@
 
 This project is building a white-label SaaS blogging platform for developers, indie makers, and solopreneurs, where each user gets their own blog served from a custom domain. Key features:
 
-- Authentication — email + password and Google OAuth, with per-user profile (name, bio, avatar)
+- Authentication — email + password and Google OAuth, with per-user profile (name, bio, avatar); writers verify their email via a token link after signup (verification is non-blocking — a dismissible banner appears in the dashboard until verified)
 - Post editor — Markdown with live preview, draft / published / scheduled states, categories and tags
 - Media library — image upload, automatic WebP conversion, thumbnail generation
 - SEO — custom meta title, description, OG image per post, auto-generated XML sitemap
 - Custom domain — each user maps their own domain to their blog; routing handled server-side
 - Analytics — total view count and per-post view count; 30-day daily chart in the dashboard
-- AI writing features — one-click excerpt, summary, and title suggestions powered by the Claude API
+- AI writing features — one-click excerpt, summary, and title suggestions powered by the OpenRouter API
 - Public blog — clean reader view per user served at `/blog/:username` or via custom domain
 - Landing page — polished, conversion-focused marketing page at `/` for visitors who are not logged in; this is the primary first impression of the product and must look production-ready
 
@@ -25,7 +25,7 @@ V1 (MVP) ships without: social auto-posting, newsletter sending, revision histor
 - **ORM / Database**: Sequelize with SQLite in development, PostgreSQL in production (Railway-managed)
 - **Media storage**: Sharp for WebP conversion; local filesystem in development, Cloudflare R2 via S3-compatible API in production
 - **Email**: Nodemailer in development, Resend.com (via SMTP or API) in production
-- **AI**: Anthropic Claude API (`@anthropic-ai/sdk`), model configurable via `ANTHROPIC_MODEL` env var
+- **AI**: OpenRouter API (called via native `fetch` against `openrouter.ai/api/v1/chat/completions`), model configurable via `OPENROUTER_MODEL` env var
 - **Deployment**: Railway.app — single service, PostgreSQL add-on, environment variables in Railway dashboard
 - **Package manager**: npm
 - **Dev tooling**: nodemon for local development; no build step (no bundler, no transpile)
@@ -38,7 +38,7 @@ Substantial scaffold already exists. The following are complete and functional o
 - All Express routes and controllers: auth, dashboard, posts, media, analytics, subscribers, settings, blog (public), AI
 - All EJS views: landing page, auth (login/register), full dashboard (posts, editor, media, analytics, subscribers, settings, profile), public blog (index, archive, post), 404, unsubscribe
 - Auth middleware (JWT + session), custom domain routing middleware, upload middleware (Sharp/WebP), Passport Google OAuth
-- AI controller: excerpt, summary, and title suggestions via Claude
+- AI controller: excerpt, summary, and title suggestions via OpenRouter
 
 What still needs to be done before production:
 1. Migrate database dialect from SQLite to PostgreSQL

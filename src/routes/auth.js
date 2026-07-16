@@ -7,6 +7,8 @@ router.post('/login', auth.login);
 router.get('/register', auth.showRegister);
 router.post('/register', auth.register);
 router.get('/logout', auth.logout);
+router.get('/verify-email', auth.verifyEmail);
+router.post('/resend-verification', auth.resendVerification);
 
 router.get('/auth/google', (req, res, next) => {
   if (!passport.googleEnabled) {

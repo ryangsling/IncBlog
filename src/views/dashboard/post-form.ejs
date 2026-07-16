@@ -6,27 +6,44 @@
   <div class="editor-col">
     <input type="text" name="title" id="title" class="title-input" placeholder="Post title" value="<%= post ? post.title : '' %>" required>
     <div class="ai-row">
-      <button type="button" class="btn btn-ghost btn-sm ai-btn" id="ai-titles">✨ Improve Title</button>
+      <button type="button" class="btn btn-ghost btn-sm ai-btn" id="ai-titles">Improve Title</button>
       <div id="title-suggestions" class="title-suggestions"></div>
     </div>
     <div class="editor-toolbar">
-      <button type="button" class="btn btn-ghost btn-sm" id="preview-toggle">Preview</button>
       <span class="word-count" id="word-count">0 words · 1 min read</span>
     </div>
-    <textarea name="content" id="content" hidden><%= post ? post.content : '' %></textarea>
-    <div id="editor" class="editor"></div>
-    <div id="preview" class="preview post-content" hidden></div>
+    <input type="hidden" name="content" id="content" value="<%= post ? post.content : '' %>">
+    <input type="hidden" name="format" id="format" value="<%= post ? post.format : 'html' %>">
+    <div id="editor-pane" class="editor-pane">
+      <div id="editor-host" class="editor-host"></div>
+    </div>
+    <div class="sel-toolbar" hidden>
+      <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+      <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+      <button type="button" data-cmd="h1" title="Heading 1">H1</button>
+      <button type="button" data-cmd="h2" title="Heading 2">H2</button>
+    </div>
+    <div class="insert-menu" hidden>
+      <div class="img-row">
+        <input type="text" data-img-url placeholder="Paste image link (jpg, png, svg…)" autocomplete="off">
+        <button type="button" data-insert="image" title="Insert image">Add</button>
+      </div>
+      <button type="button" data-insert="divider">Divider</button>
+      <button type="button" data-insert="h2">Heading</button>
+      <button type="button" data-insert="h3">Subheading</button>
+    </div>
+
     <div id="ai-error" class="notice notice-error" hidden></div>
     <label>Excerpt
       <div class="field-with-action">
         <textarea name="excerpt" id="excerpt" rows="3" placeholder="A short hook for your post..."><%= post ? post.excerpt : '' %></textarea>
-        <button type="button" class="btn btn-ghost btn-sm ai-btn" id="ai-excerpt">✨ Generate Excerpt</button>
+        <button type="button" class="btn btn-ghost btn-sm ai-btn" id="ai-excerpt">Generate Excerpt</button>
       </div>
     </label>
     <label>Summary
       <div class="field-with-action">
         <textarea name="summary" id="summary" rows="5" placeholder="A longer summary of your post..."><%= post ? post.summary : '' %></textarea>
-        <button type="button" class="btn btn-ghost btn-sm ai-btn" id="ai-summary">✨ Generate Summary</button>
+        <button type="button" class="btn btn-ghost btn-sm ai-btn" id="ai-summary">Generate Summary</button>
       </div>
     </label>
   </div>
@@ -79,6 +96,5 @@
     </div>
   </aside>
 </form>
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script type="module" src="/js/editor.js"></script>
+<script src="/js/editor.js"></script>
 <%- include('../partials/dashboard-bottom') %>

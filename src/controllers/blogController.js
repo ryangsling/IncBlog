@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const { marked } = require('marked');
-const { User, Post, Tag, Category, PageView, Setting, publishedWhere } = require('../models');
+const { User, Post, Tag, Category, PageView, Setting, Subscriber, publishedWhere } = require('../models');
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
@@ -38,10 +38,16 @@ exports.index = async (req, res, next) => {
     const ctx = await getBlogContext(req.params.username);
     if (!ctx) return res.status(404).render('404', { title: 'Blog not found' });
     const posts = await publicPosts(ctx.user.id);
+    let isFollowing = false;
+    if (res.locals.currentUser && res.locals.currentUser.id !== ctx.user.id) {
+      const sub = await Subscriber.findOne({ where: { userId: ctx.user.id, followerId: res.locals.currentUser.id } });
+      isFollowing = Boolean(sub);
+    }
     res.render('blog/index', {
       ...ctx,
       posts,
       readTime,
+      isFollowing,
       subscribed: req.query.subscribed === '1',
       title: ctx.settings.blogTitle || `${ctx.user.name}'s Blog`,
     });
@@ -74,11 +80,23 @@ exports.post = async (req, res, next) => {
       });
     }
 
+    // HTML and plain format posts are rendered as-is; Markdown posts are parsed live.
+    const renderedHtml = (post.format === 'html' || post.format === 'plain')
+      ? (post.content || '')
+      : marked.parse(post.content || '');
+
+    let isFollowing = false;
+    if (res.locals.currentUser && res.locals.currentUser.id !== ctx.user.id) {
+      const sub = await Subscriber.findOne({ where: { userId: ctx.user.id, followerId: res.locals.currentUser.id } });
+      isFollowing = Boolean(sub);
+    }
+
     res.render('blog/post', {
       ...ctx,
       post,
-      html: marked.parse(post.content || ''),
+      html: renderedHtml,
       readTime: readTime(post.content),
+      isFollowing,
       title: post.metaTitle || post.title,
     });
   } catch (err) {
@@ -142,6 +160,47 @@ exports.sitemap = async (req, res, next) => {
       ),
     ].join('\n');
     res.type('application/xml').send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.explore = async (req, res, next) => {
+  try {
+    const { category, sort } = req.query;
+    const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+    const limit = 20;
+    const offset = (page - 1) * limit;
+
+    const where = publishedWhere();
+    if (category) {
+      const cat = await Category.findOne({ where: { slug: category } });
+      if (cat) where.categoryId = cat.id;
+    }
+
+    const order = sort === 'oldest' ? [['publishAt', 'ASC']]
+      : sort === 'views' ? [['views', 'DESC']]
+      : [['publishAt', 'DESC']];
+
+    const { count, rows: posts } = await Post.findAndCountAll({
+      where,
+      include: [Category, Tag, { model: User, as: 'author', attributes: ['id', 'name', 'username', 'avatar'] }],
+      order,
+      limit,
+      offset,
+    });
+
+    const categories = await Category.findAll({ order: [['name', 'ASC']] });
+
+    res.render('explore', {
+      title: 'Explore — IncBlog',
+      posts,
+      categories,
+      activeCategory: category || '',
+      activeSort: sort || 'newest',
+      totalPages: Math.ceil(count / limit),
+      currentPage: page,
+    });
   } catch (err) {
     next(err);
   }

@@ -1,30 +1,34 @@
-const Anthropic = require('@anthropic-ai/sdk');
-
-let client = null;
-function getClient() {
-  if (!process.env.ANTHROPIC_API_KEY) return null;
-  if (!client) client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  return client;
-}
-
-const MODEL = process.env.ANTHROPIC_MODEL || 'claude-3-5-haiku-latest';
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const MODEL = process.env.OPENROUTER_MODEL || 'openai/gpt-oss-120b:free';
+const SITE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 async function complete(prompt, maxTokens = 500) {
-  const c = getClient();
-  if (!c) {
-    const err = new Error('AI features are not configured. Set ANTHROPIC_API_KEY in your .env file.');
+  if (!OPENROUTER_API_KEY) {
+    const err = new Error('AI features are not configured. Set OPENROUTER_API_KEY in your .env file.');
     err.status = 503;
     throw err;
   }
-  const msg = await c.messages.create({
-    model: MODEL,
-    max_tokens: maxTokens,
-    messages: [{ role: 'user', content: prompt }],
+  const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+      'HTTP-Referer': SITE_URL,
+      'X-Title': 'IncBlog',
+    },
+    body: JSON.stringify({
+      model: MODEL,
+      max_tokens: maxTokens,
+      messages: [{ role: 'user', content: prompt }],
+    }),
   });
-  return msg.content
-    .map((block) => block.text || '')
-    .join('')
-    .trim();
+  if (!res.ok) {
+    const err = new Error(`OpenRouter error: ${res.status} ${res.statusText}`);
+    err.status = 502;
+    throw err;
+  }
+  const data = await res.json();
+  return data.choices[0].message.content.trim();
 }
 
 function requireContent(req, res) {

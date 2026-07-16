@@ -18,13 +18,21 @@ if (!RESEND_API_KEY && process.env.SMTP_HOST) {
   });
 }
 
+let loggedUnconfigured = false;
+
 async function sendMail({ to, subject, html }) {
   try {
     if (resend) {
       await resend.emails.send({ from: RESEND_FROM, to, subject, html });
       return true;
     }
-    if (!transporter) return false;
+    if (!transporter) {
+      if (!loggedUnconfigured) {
+        console.log('Mailer not configured — set RESEND_API_KEY or SMTP_HOST to send email.');
+        loggedUnconfigured = true;
+      }
+      return false;
+    }
     await transporter.sendMail({ from: RESEND_FROM, to, subject, html });
     return true;
   } catch (err) {

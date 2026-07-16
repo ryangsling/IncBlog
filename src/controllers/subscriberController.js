@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { User, Subscriber, Setting, Op } = require('../models');
+const { User, Subscriber, Setting, Post, Category, Tag, Op, publishedWhere } = require('../models');
 const { sendMail } = require('../middleware/mailer');
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
@@ -28,7 +28,7 @@ exports.subscribe = async (req, res, next) => {
       });
       const settings = await Setting.findOne({ where: { userId: user.id } });
       const blogTitle = (settings && settings.blogTitle) || `${user.name}'s Blog`;
-      sendMail({
+      await sendMail({
         to: email,
         subject: `You're subscribed to ${blogTitle}`,
         html: `<p>Thanks for subscribing to <strong>${blogTitle}</strong>!</p><p><a href="${BASE_URL}/unsubscribe?token=${sub.token}">Unsubscribe</a></p>`,
@@ -95,6 +95,54 @@ exports.exportCsv = async (req, res, next) => {
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="subscribers.csv"');
     res.send(lines.join('\r\n') + '\r\n');
+  } catch (err) {
+    next(err);
+  }
+};
+
+// ─── Account-based following ─────────────────────────────────────────────
+
+exports.follow = async (req, res, next) => {
+  try {
+    const owner = await User.findOne({ where: { username: req.params.username } });
+    if (!owner) return res.status(404).render('404', { title: 'Blog not found' });
+    if (owner.id === req.user.id) return res.redirect('back');
+    const existing = await Subscriber.findOne({ where: { userId: owner.id, followerId: req.user.id } });
+    if (!existing) {
+      await Subscriber.create({ userId: owner.id, followerId: req.user.id, status: 'active' });
+    }
+    const back = req.get('referer') || `/blog/${owner.username}`;
+    res.redirect(back);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.unfollow = async (req, res, next) => {
+  try {
+    const owner = await User.findOne({ where: { username: req.params.username } });
+    if (!owner) return res.status(404).render('404', { title: 'Blog not found' });
+    await Subscriber.destroy({ where: { userId: owner.id, followerId: req.user.id } });
+    const back = req.get('referer') || `/blog/${owner.username}`;
+    res.redirect(back);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.followingFeed = async (req, res, next) => {
+  try {
+    const followingIds = (await Subscriber.findAll({ where: { followerId: req.user.id }, attributes: ['userId'] })).map((s) => s.userId);
+    const sort = req.query.sort === 'oldest' ? 'oldest' : 'newest';
+    const direction = sort === 'oldest' ? 'ASC' : 'DESC';
+    const posts = followingIds.length
+      ? await Post.findAll({
+          where: { userId: { [Op.in]: followingIds }, ...publishedWhere() },
+          include: [Category, Tag, { model: User, as: 'author' }],
+          order: [['publishAt', direction]],
+        })
+      : [];
+    res.render('dashboard/following', { title: 'Following', active: 'following', posts, sort });
   } catch (err) {
     next(err);
   }

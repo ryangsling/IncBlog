@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<%- include('partials/head') %>
+<title><%= title %></title>
+</head>
+<body class="landing">
+<header class="site-header">
+  <div class="site-header-inner">
+    <a class="logo" href="/">Inc<span>Blog</span></a>
+    <nav class="site-nav">
+      <a href="/explore" class="active">Explore</a>
+      <% if (locals.currentUser) { %>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/logout">Log out</a>
+      <% } else { %>
+      <a href="/login">Log in</a>
+      <a class="btn btn-primary btn-sm" href="/register">Get started</a>
+      <% } %>
+    </nav>
+  </div>
+</header>
+<main>
+  <div class="container-wide" style="padding: var(--spacing-32) var(--spacing-24);">
+    <div class="page-head">
+      <h1>Explore</h1>
+      <p class="muted" style="margin:0;">Recent posts from across IncBlog</p>
+    </div>
+
+    <div class="filter-form">
+      <select id="category-filter">
+        <option value="">All categories</option>
+        <% categories.forEach(function(c) { %>
+        <option value="<%= c.slug %>" <%= activeCategory === c.slug ? 'selected' : '' %>><%= c.name %></option>
+        <% }) %>
+      </select>
+      <select id="sort-filter">
+        <option value="newest" <%= activeSort === 'newest' ? 'selected' : '' %>>Newest first</option>
+        <option value="oldest" <%= activeSort === 'oldest' ? 'selected' : '' %>>Oldest first</option>
+        <option value="views" <%= activeSort === 'views' ? 'selected' : '' %>>Most views</option>
+      </select>
+    </div>
+
+    <div class="post-list">
+      <% if (posts.length) { %>
+      <% posts.forEach(function(p) { %>
+      <article class="post-card">
+        <p class="meta">
+          <a href="/blog/<%= p.author.username %>" style="font-weight: 500; color: var(--color-slate-dark);"><%= p.author.name %></a>
+          <% if (locals.currentUser && currentUser.id !== p.author.id) { %>
+          <form method="POST" action="/blog/<%= p.author.username %>/follow" style="display:inline;" class="inline-follow">
+            <button class="btn btn-ghost btn-sm" type="submit" style="padding:2px 8px; font-size:12px;">+ Follow</button>
+          </form>
+          <% } %>
+          · <%= new Date(p.publishAt || p.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+          <% if (p.Category) { %> · <a href="/blog/<%= p.author.username %>/category/<%= p.Category.slug %>"><%= p.Category.name %></a><% } %>
+        </p>
+        <h2><a href="/blog/<%= p.author.username %>/<%= p.slug %>"><%= p.title %></a></h2>
+        <% if (p.excerpt) { %><p class="excerpt"><%= p.excerpt %></p><% } %>
+      </article>
+      <% }) %>
+      <% } else { %>
+      <p class="empty">No posts yet. Check back soon!</p>
+      <% } %>
+    </div>
+
+    <% if (totalPages > 1) { %>
+    <div class="filter-form" style="justify-content: center; margin-top: var(--spacing-32);">
+      <% if (currentPage > 1) { %>
+      <a class="btn btn-ghost btn-sm" href="?page=<%= currentPage - 1 %><%= activeCategory ? '&category=' + activeCategory : '' %><%= activeSort !== 'newest' ? '&sort=' + activeSort : '' %>">Previous</a>
+      <% } %>
+      <span class="muted" style="padding: 6px 12px;">Page <%= currentPage %> of <%= totalPages %></span>
+      <% if (currentPage < totalPages) { %>
+      <a class="btn btn-ghost btn-sm" href="?page=<%= currentPage + 1 %><%= activeCategory ? '&category=' + activeCategory : '' %><%= activeSort !== 'newest' ? '&sort=' + activeSort : '' %>">Next</a>
+      <% } %>
+    </div>
+    <% } %>
+  </div>
+</main>
+<footer class="site-footer">
+  <div class="site-footer-inner">
+    <div>
+      <a class="logo" href="/">Inc<span>Blog</span></a>
+      <p class="site-footer-tagline">A focused blogging platform by <a href="https://incodet.com" style="color: var(--color-cloud-medium);">incodet.com</a>.</p>
+    </div>
+    <div class="site-footer-cols">
+      <div class="site-footer-col">
+        <h4>Product</h4>
+        <a href="/">Home</a>
+        <a href="/explore">Explore</a>
+      </div>
+      <div class="site-footer-col">
+        <h4>Company</h4>
+        <a href="https://github.com/incodet" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:hello@incodet.com">Contact</a>
+      </div>
+      <div class="site-footer-col">
+        <h4>Account</h4>
+        <a href="/login">Log in</a>
+        <a href="/register">Create account</a>
+      </div>
+      <p class="site-footer-copy">&copy; 2026 incodet.com. All rights reserved.</p>
+    </div>
+  </div>
+</footer>
+<script>
+document.getElementById('category-filter')?.addEventListener('change', function() {
+  const params = new URLSearchParams(window.location.search);
+  params.set('category', this.value);
+  params.delete('page');
+  window.location.search = params.toString();
+});
+document.getElementById('sort-filter')?.addEventListener('change', function() {
+  const params = new URLSearchParams(window.location.search);
+  if (this.value === 'newest') { params.delete('sort'); }
+  else { params.set('sort', this.value); }
+  params.delete('page');
+  window.location.search = params.toString();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+<% if (typeof currentUser !== 'undefined' && currentUser && !currentUser.emailVerified) { %>
+<div class="notice notice-verify" data-verify-banner hidden style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+  <span>Please verify your email — check your inbox for the verification link.</span>
+  <span style="display:flex;gap:0.5rem;align-items:center;">
+    <form method="POST" action="/resend-verification" style="display:inline">
+      <button class="btn btn-ghost btn-sm" type="submit">Resend</button>
+    </form>
+    <button type="button" data-verify-dismiss class="btn btn-ghost btn-sm" aria-label="Dismiss verification banner">&times;</button>
+  </span>
+</div>
+<script src="/js/verify-banner.js"></script>
+<% } %>

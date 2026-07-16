@@ -13,13 +13,15 @@
     <a href="/dashboard/media" class="<%= active === 'media' ? 'active' : '' %>">Media</a>
     <a href="/dashboard/analytics" class="<%= active === 'analytics' ? 'active' : '' %>">Analytics</a>
     <a href="/dashboard/subscribers" class="<%= active === 'subscribers' ? 'active' : '' %>">Subscribers</a>
+    <a href="/dashboard/following" class="<%= active === 'following' ? 'active' : '' %>">Following</a>
     <a href="/dashboard/settings" class="<%= active === 'settings' ? 'active' : '' %>">Settings</a>
     <a href="/dashboard/profile" class="<%= active === 'profile' ? 'active' : '' %>">Profile</a>
   </nav>
   <div class="sidebar-footer">
+    <a href="/explore">Explore</a>
     <a href="/blog/<%= currentUser.username %>" target="_blank">View blog ↗</a>
-    <button id="theme-toggle" class="btn btn-ghost" type="button">Toggle theme</button>
     <a href="/logout">Log out</a>
   </div>
 </aside>
 <main class="content">
+<%- include('verify-banner') %>

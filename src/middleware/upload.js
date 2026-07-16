@@ -88,7 +88,7 @@ async function deleteUploadByUrl(url) {
 
   if (!useR2 && url.startsWith('/uploads/')) {
     const filePath = path.join(UPLOAD_DIR, path.basename(url));
-    fs.unlink(filePath, () => {});
+    fs.unlink(filePath, (err) => { if (err) console.error('Failed to delete local file:', err.message); });
   }
 }
 

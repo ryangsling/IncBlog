@@ -1,0 +1,24 @@
+<%- include('../partials/dashboard-top') %>
+<div class="page-head">
+  <h1>Following</h1>
+  <div class="filter-form">
+    <a href="/dashboard/following?sort=newest" class="btn btn-sm <%= sort !== 'oldest' ? 'btn-primary' : 'btn-ghost' %>">Newest</a>
+    <a href="/dashboard/following?sort=oldest" class="btn btn-sm <%= sort === 'oldest' ? 'btn-primary' : 'btn-ghost' %>">Oldest</a>
+  </div>
+</div>
+<div class="post-list">
+  <% posts.forEach(function(p) { %>
+  <article class="post-card">
+    <% if (p.featuredImage) { %><a href="/blog/<%= p.author.username %>/<%= p.slug %>"><img class="post-card-image" src="<%= p.featuredImage %>" alt="<%= p.title %>" loading="lazy"></a><% } %>
+    <h2><a href="/blog/<%= p.author.username %>/<%= p.slug %>"><%= p.title %></a></h2>
+    <p class="meta">
+      <a href="/blog/<%= p.author.username %>" class="author-link"><%= p.author.name %></a> ·
+      <%= new Date(p.publishAt || p.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+      <% if (p.Category) { %> · <a href="/blog/<%= p.author.username %>/category/<%= p.Category.slug %>"><%= p.Category.name %></a><% } %>
+    </p>
+    <% if (p.excerpt) { %><p class="excerpt"><%= p.excerpt %></p><% } %>
+  </article>
+  <% }) %>
+  <% if (!posts.length) { %><p class="empty">No posts yet from the blogs you follow. <a href="/explore">Explore</a> to find new writers.</p><% } %>
+</div>
+<%- include('../partials/dashboard-bottom') %>

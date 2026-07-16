@@ -1,7 +1,11 @@
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const slugify = require('slugify');
 const { User, Setting } = require('../models');
 const { setAuthCookie } = require('../middleware/auth');
+const { sendMail } = require('../middleware/mailer');
+
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 async function uniqueUsername(base) {
   const root = base || 'writer';
@@ -61,16 +65,62 @@ exports.register = async (req, res, next) => {
 
     const base = slugify(name, { lower: true, strict: true }) || 'writer';
     const username = await uniqueUsername(base);
+    const verifyToken = crypto.randomBytes(32).toString('hex');
     const user = await User.create({
       name,
       email,
       passwordHash: bcrypt.hashSync(password, 10),
       username,
+      emailVerified: false,
+      emailVerifyToken: verifyToken,
     });
     await Setting.create({ userId: user.id, blogTitle: `${name}'s Blog` });
 
+    const verifyUrl = `${BASE_URL}/verify-email?token=${verifyToken}`;
+    await sendMail({
+      to: email,
+      subject: 'Verify your IncBlog email',
+      html: `<p>Welcome to IncBlog, ${name}.</p><p>Please confirm your email address to unlock all features:</p><p><a href="${verifyUrl}">Verify your email</a></p><p style="color:#87867f;font-size:13px;">If the button above doesn't work, paste this link into your browser: ${verifyUrl}</p>`,
+    });
+
     setAuthCookie(res, user);
     res.redirect('/dashboard');
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.verifyEmail = async (req, res, next) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(400).render('404', { title: 'Invalid link', message: 'The verification link is missing or invalid.' });
+    const user = await User.findOne({ where: { emailVerifyToken: token } });
+    if (!user) return res.status(400).render('404', { title: 'Invalid or expired link', message: 'This verification link has already been used or is invalid.' });
+    user.emailVerified = true;
+    user.emailVerifyToken = null;
+    await user.save();
+    setAuthCookie(res, user);
+    res.redirect('/dashboard');
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.resendVerification = async (req, res, next) => {
+  try {
+    if (!req.user) return res.redirect('/login');
+    const user = req.user;
+    if (user.emailVerified) return res.redirect('/dashboard');
+    const verifyToken = crypto.randomBytes(32).toString('hex');
+    user.emailVerifyToken = verifyToken;
+    await user.save();
+    const verifyUrl = `${BASE_URL}/verify-email?token=${verifyToken}`;
+    await sendMail({
+      to: user.email,
+      subject: 'Verify your IncBlog email',
+      html: `<p>Please confirm your email address:</p><p><a href="${verifyUrl}">Verify your email</a></p><p style="color:#87867f;font-size:13px;">If the button above doesn't work, paste this link into your browser: ${verifyUrl}</p>`,
+    });
+    res.redirect(req.get('referer') || '/dashboard');
   } catch (err) {
     next(err);
   }

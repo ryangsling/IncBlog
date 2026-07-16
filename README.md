@@ -1,16 +1,16 @@
 # IncBlog
 
-IncBlog is a SaaS blogging platform by [incodet.com](https://incodet.com). Full-stack Node.js app with a writing dashboard, AI assistance (Claude), media library, analytics, newsletter subscribers, and a public blog per user.
+IncBlog is a SaaS blogging platform by [incodet.com](https://incodet.com). Full-stack Node.js app with a writing dashboard, AI assistance (OpenRouter), media library, analytics, newsletter subscribers, and a public blog per user.
 
 ## Stack
 
 - Node.js + Express, EJS server-side rendering
 - SQLite via Sequelize ORM
 - JWT auth in HTTP-only cookies, optional Google OAuth (Passport)
-- Claude API via `@anthropic-ai/sdk`
+- OpenRouter API via fetch (model configurable via `OPENROUTER_MODEL`)
 - `sharp` for WebP conversion + thumbnails
-- Nodemailer for subscriber emails
-- Custom CSS, dark mode first
+- Nodemailer / Resend for subscriber + verification emails
+- Custom CSS, warm parchment design (light mode)
 
 ## Setup
 
@@ -26,7 +26,7 @@ IncBlog is a SaaS blogging platform by [incodet.com](https://incodet.com). Full-
    cp .env.example .env
    ```
 
-   Set at least `JWT_SECRET`. Set `ANTHROPIC_API_KEY` to enable the AI buttons, `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` for Google login, and the `SMTP_*` vars for subscriber emails. All are optional except `JWT_SECRET`.
+   Set at least `JWT_SECRET`. Set `OPENROUTER_API_KEY` to enable the AI buttons, `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` for Google login, and the `SMTP_*` or `RESEND_API_KEY` vars for emails. All are optional except `JWT_SECRET`.
 
 3. Run in development (nodemon):
 
@@ -52,6 +52,7 @@ The app starts at `http://localhost:3000`. On first run the database is created 
 | --- | --- |
 | `/` | Landing page |
 | `/login`, `/register` | Auth |
+| `/verify-email?token=...` | Email verification (sent at signup) |
 | `/dashboard` | Writer dashboard |
 | `/blog/:username` | Public blog |
 | `/blog/:username/:slug` | Post page |
