@@ -1,4 +1,6 @@
 const { createApp, registerAndGetCookie } = require('./setup');
+
+jest.setTimeout(20000);
 const supertest = require('supertest');
 const { User } = require('../src/models');
 

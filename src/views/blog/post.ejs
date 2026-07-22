@@ -35,10 +35,36 @@
     <% }) %>
   </div>
   <% } %>
+  <div class="post-feedback" aria-label="Post feedback">
+    <div class="vote-group">
+      <form method="POST" action="/blog/<%= user.username %>/<%= post.slug %>/vote" class="vote-form">
+        <input type="hidden" name="value" value="1" />
+        <button type="submit" class="vote-button" aria-label="Upvote this post">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M9.27787 3.93695L3.68873 9.08488C2.70226 9.99348 3.31292 11.6411 4.65327 11.6873L7.05168 11.77C7.85951 11.7978 8.5 12.4608 8.5 13.2691V16.3571C8.5 17.1856 9.17157 17.8571 10 17.8571H10.9286C11.757 17.8571 12.4286 17.1856 12.4286 16.3571V13.2666C12.4286 12.4593 13.0675 11.7968 13.8743 11.7676L15.9325 11.6931C17.2708 11.6446 17.8797 10 16.8956 9.09178L11.3114 3.93797C10.7373 3.40808 9.85254 3.40764 9.27787 3.93695Z" stroke="currentColor" stroke-width="2"></path>
+          </svg>
+        </button>
+        <span class="vote-count"><%= postUpvotes %></span>
+      </form>
+      <form method="POST" action="/blog/<%= user.username %>/<%= post.slug %>/vote" class="vote-form">
+        <input type="hidden" name="value" value="-1" />
+        <button type="submit" class="vote-button" aria-label="Downvote this post">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <path d="M10.7221 16.0631L16.3113 10.9151C17.2977 10.0065 16.6871 8.35886 15.3467 8.31266L12.9483 8.23C12.1405 8.20215 11.5 7.53917 11.5 6.73086V3.64286C11.5 2.81443 10.8284 2.14286 10 2.14286H9.07143C8.24298 2.14286 7.57143 2.81443 7.57143 3.64286V6.73337C7.57143 7.54068 6.93252 8.20322 6.12572 8.23238L4.0675 8.3069C2.72921 8.35537 2.12033 10 3.10443 10.9082L8.68864 16.062C9.26275 16.5919 10.1475 16.5924 10.7221 16.0631Z" stroke="currentColor" stroke-width="2"></path>
+          </svg>
+        </button>
+        <span class="vote-count"><%= postDownvotes %></span>
+      </form>
+    </div>
+    <div class="comment-count">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path></svg>
+      <span><%= comments.length %></span>
+    </div>
+  </div>
   <div class="author-card card">
     <% if (user.avatar) { %><img class="avatar" src="<%= user.avatar %>" alt="<%= user.name %>"><% } else { %><div class="avatar avatar-placeholder"><%= user.name.charAt(0).toUpperCase() %></div><% } %>
     <div>
-      <h3><%= user.name %></h3>
+      <h3>Written by: <%= user.name %></h3>
       <% if (user.bio) { %><p><%= user.bio %></p><% } %>
       <% if (locals.currentUser && currentUser.id !== user.id) { %>
       <form method="POST" action="/blog/<%= user.username %>/<%= isFollowing ? 'unfollow' : 'follow' %>" style="margin-top: var(--spacing-8);">
@@ -46,6 +72,65 @@
       </form>
       <% } %>
     </div>
+  </div>
+  <div id="comments" class="comments card">
+    <div class="comments-header">
+      <h3>Responses (<%= comments.length %>)</h3>
+      <% if (!locals.currentUser) { %>
+        <a class="btn btn-ghost btn-sm" href="/login">Sign in to comment</a>
+      <% } %>
+    </div>
+    <% if (locals.currentUser) { %>
+      <form method="POST" action="/blog/<%= user.username %>/<%= post.slug %>/comments" class="comment-form">
+        <textarea name="content" rows="3" placeholder="What are your thoughts?" required></textarea>
+        <button class="btn btn-primary btn-sm" type="submit">Post comment</button>
+      </form>
+    <% } %>
+    <% if (!comments.length) { %>
+      <p class="comment-empty">No responses yet.</p>
+    <% } else { %>
+      <div class="comment-list">
+        <% comments.forEach(function(c) { %>
+          <% const votes = commentVotes[c.id] || { upvotes: 0, downvotes: 0 }; %>
+          <div class="comment">
+            <div class="comment-meta">
+              <div class="comment-author">
+                <% if (c.author && c.author.avatar) { %>
+                  <img class="avatar" src="<%= c.author.avatar %>" alt="<%= c.author.name %>">
+                <% } else { %>
+                  <div class="avatar avatar-placeholder"><%= (c.author && c.author.name ? c.author.name.charAt(0).toUpperCase() : '?') %></div>
+                <% } %>
+                <div>
+                  <div class="comment-name"><%= c.author ? c.author.name : 'User' %></div>
+                  <div class="comment-date"><%= new Date(c.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %></div>
+                </div>
+              </div>
+              <div class="comment-votes">
+                <form method="POST" action="/blog/<%= user.username %>/<%= post.slug %>/comments/<%= c.id %>/vote" class="vote-form">
+                  <input type="hidden" name="value" value="1" />
+                  <button type="submit" class="vote-button" aria-label="Upvote this comment">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 20 20" fill="none">
+                      <path d="M9.27787 3.93695L3.68873 9.08488C2.70226 9.99348 3.31292 11.6411 4.65327 11.6873L7.05168 11.77C7.85951 11.7978 8.5 12.4608 8.5 13.2691V16.3571C8.5 17.1856 9.17157 17.8571 10 17.8571H10.9286C11.757 17.8571 12.4286 17.1856 12.4286 16.3571V13.2666C12.4286 12.4593 13.0675 11.7968 13.8743 11.7676L15.9325 11.6931C17.2708 11.6446 17.8797 10 16.8956 9.09178L11.3114 3.93797C10.7373 3.40808 9.85254 3.40764 9.27787 3.93695Z" stroke="currentColor" stroke-width="2"></path>
+                    </svg>
+                  </button>
+                  <span class="vote-count"><%= votes.upvotes %></span>
+                </form>
+                <form method="POST" action="/blog/<%= user.username %>/<%= post.slug %>/comments/<%= c.id %>/vote" class="vote-form">
+                  <input type="hidden" name="value" value="-1" />
+                  <button type="submit" class="vote-button" aria-label="Downvote this comment">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 20 20" fill="none">
+                      <path d="M10.7221 16.0631L16.3113 10.9151C17.2977 10.0065 16.6871 8.35886 15.3467 8.31266L12.9483 8.23C12.1405 8.20215 11.5 7.53917 11.5 6.73086V3.64286C11.5 2.81443 10.8284 2.14286 10 2.14286H9.07143C8.24298 2.14286 7.57143 2.81443 7.57143 3.64286V6.73337C7.57143 7.54068 6.93252 8.20322 6.12572 8.23238L4.0675 8.3069C2.72921 8.35537 2.12033 10 3.10443 10.9082L8.68864 16.062C9.26275 16.5919 10.1475 16.5924 10.7221 16.0631Z" stroke="currentColor" stroke-width="2"></path>
+                    </svg>
+                  </button>
+                  <span class="vote-count"><%= votes.downvotes %></span>
+                </form>
+              </div>
+            </div>
+            <p class="comment-body"><%= c.content %></p>
+          </div>
+        <% }) %>
+      </div>
+    <% } %>
   </div>
 </article>
 <% if (post.summary) { %>

@@ -6,3 +6,4 @@ src/public/uploads/*
 
 # Test coverage output
 coverage/
+client_secret_*.json

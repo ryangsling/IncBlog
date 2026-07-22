@@ -1,6 +1,19 @@
 const crypto = require('crypto');
 const { marked } = require('marked');
-const { User, Post, Tag, Category, PageView, Setting, Subscriber, publishedWhere } = require('../models');
+const {
+  User,
+  Post,
+  Tag,
+  Category,
+  PageView,
+  Setting,
+  Subscriber,
+  Comment,
+  PostVote,
+  CommentVote,
+  Sequelize,
+  publishedWhere,
+} = require('../models');
 const { baseUrl: BASE_URL } = require('../config/site');
 
 function readTime(content) {
@@ -90,12 +103,48 @@ exports.post = async (req, res, next) => {
       isFollowing = Boolean(sub);
     }
 
+    const comments = await Comment.findAll({
+      where: { postId: post.id },
+      include: [{ model: User, as: 'author', attributes: ['id', 'name', 'username', 'avatar'] }],
+      order: [['createdAt', 'ASC']],
+    });
+
+    const [postUpvotes, postDownvotes] = await Promise.all([
+      PostVote.count({ where: { postId: post.id, value: 1 } }),
+      PostVote.count({ where: { postId: post.id, value: -1 } }),
+    ]);
+
+    const commentVoteRows = comments.length
+      ? await CommentVote.findAll({
+        where: { commentId: comments.map((c) => c.id) },
+        attributes: [
+          'commentId',
+          [Sequelize.fn('SUM', Sequelize.literal("CASE WHEN value = 1 THEN 1 ELSE 0 END")), 'upvotes'],
+          [Sequelize.fn('SUM', Sequelize.literal("CASE WHEN value = -1 THEN 1 ELSE 0 END")), 'downvotes'],
+        ],
+        group: ['commentId'],
+      })
+      : [];
+
+    const commentVotes = commentVoteRows.reduce((acc, row) => {
+      const data = row.get({ plain: true });
+      acc[data.commentId] = {
+        upvotes: Number(data.upvotes || 0),
+        downvotes: Number(data.downvotes || 0),
+      };
+      return acc;
+    }, {});
+
     res.render('blog/post', {
       ...ctx,
       post,
       html: renderedHtml,
       readTime: readTime(post.content),
       isFollowing,
+      comments,
+      commentVotes,
+      postUpvotes,
+      postDownvotes,
       title: post.metaTitle || post.title,
     });
   } catch (err) {
@@ -200,6 +249,105 @@ exports.explore = async (req, res, next) => {
       totalPages: Math.ceil(count / limit),
       currentPage: page,
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+async function toggleVote({ model, where, value }) {
+  const existing = await model.findOne({ where });
+  if (!existing) {
+    await model.create({ ...where, value });
+    return;
+  }
+  if (existing.value === value) {
+    await existing.destroy();
+    return;
+  }
+  existing.value = value;
+  await existing.save();
+}
+
+exports.createComment = async (req, res, next) => {
+  try {
+    const ctx = await getBlogContext(req.params.username);
+    if (!ctx) return res.status(404).render('404', { title: 'Blog not found' });
+    const post = await Post.findOne({
+      where: { userId: ctx.user.id, slug: req.params.slug, ...publishedWhere() },
+    });
+    if (!post) return res.status(404).render('404', { title: 'Post not found' });
+
+    const content = String(req.body.content || '').trim();
+    if (!content) {
+      return res.redirect(`/blog/${ctx.user.username}/${post.slug}#comments`);
+    }
+
+    await Comment.create({
+      postId: post.id,
+      userId: res.locals.currentUser.id,
+      content,
+    });
+
+    res.redirect(`/blog/${ctx.user.username}/${post.slug}#comments`);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.votePost = async (req, res, next) => {
+  try {
+    const ctx = await getBlogContext(req.params.username);
+    if (!ctx) return res.status(404).render('404', { title: 'Blog not found' });
+    const post = await Post.findOne({
+      where: { userId: ctx.user.id, slug: req.params.slug, ...publishedWhere() },
+    });
+    if (!post) return res.status(404).render('404', { title: 'Post not found' });
+
+    const value = parseInt(req.body.value, 10);
+    if (![1, -1].includes(value)) {
+      return res.redirect(`/blog/${ctx.user.username}/${post.slug}`);
+    }
+
+    await toggleVote({
+      model: PostVote,
+      where: { postId: post.id, userId: res.locals.currentUser.id },
+      value,
+    });
+
+    res.redirect(`/blog/${ctx.user.username}/${post.slug}`);
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.voteComment = async (req, res, next) => {
+  try {
+    const ctx = await getBlogContext(req.params.username);
+    if (!ctx) return res.status(404).render('404', { title: 'Blog not found' });
+    const post = await Post.findOne({
+      where: { userId: ctx.user.id, slug: req.params.slug, ...publishedWhere() },
+    });
+    if (!post) return res.status(404).render('404', { title: 'Post not found' });
+
+    const comment = await Comment.findOne({
+      where: { id: req.params.commentId, postId: post.id },
+    });
+    if (!comment) {
+      return res.redirect(`/blog/${ctx.user.username}/${post.slug}#comments`);
+    }
+
+    const value = parseInt(req.body.value, 10);
+    if (![1, -1].includes(value)) {
+      return res.redirect(`/blog/${ctx.user.username}/${post.slug}#comments`);
+    }
+
+    await toggleVote({
+      model: CommentVote,
+      where: { commentId: comment.id, userId: res.locals.currentUser.id },
+      value,
+    });
+
+    res.redirect(`/blog/${ctx.user.username}/${post.slug}#comments`);
   } catch (err) {
     next(err);
   }

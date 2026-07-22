@@ -95,6 +95,36 @@ const PageView = sequelize.define(
   { tableName: 'page_views', updatedAt: false }
 );
 
+const Comment = sequelize.define(
+  'Comment',
+  {
+    content: { type: DataTypes.TEXT, allowNull: false },
+  },
+  { tableName: 'comments' }
+);
+
+const PostVote = sequelize.define(
+  'PostVote',
+  {
+    value: { type: DataTypes.INTEGER, allowNull: false },
+  },
+  {
+    tableName: 'post_votes',
+    indexes: [{ unique: true, fields: ['userId', 'postId'] }],
+  }
+);
+
+const CommentVote = sequelize.define(
+  'CommentVote',
+  {
+    value: { type: DataTypes.INTEGER, allowNull: false },
+  },
+  {
+    tableName: 'comment_votes',
+    indexes: [{ unique: true, fields: ['userId', 'commentId'] }],
+  }
+);
+
 const Subscriber = sequelize.define(
   'Subscriber',
   {
@@ -132,6 +162,18 @@ User.hasMany(Media, { foreignKey: 'userId', onDelete: 'CASCADE' });
 Media.belongsTo(User, { foreignKey: 'userId' });
 Post.hasMany(PageView, { foreignKey: 'postId', onDelete: 'CASCADE' });
 PageView.belongsTo(Post, { foreignKey: 'postId' });
+Post.hasMany(Comment, { foreignKey: 'postId', onDelete: 'CASCADE' });
+Comment.belongsTo(Post, { foreignKey: 'postId' });
+User.hasMany(Comment, { foreignKey: 'userId', onDelete: 'CASCADE' });
+Comment.belongsTo(User, { as: 'author', foreignKey: 'userId' });
+Post.hasMany(PostVote, { foreignKey: 'postId', onDelete: 'CASCADE' });
+PostVote.belongsTo(Post, { foreignKey: 'postId' });
+User.hasMany(PostVote, { foreignKey: 'userId', onDelete: 'CASCADE' });
+PostVote.belongsTo(User, { foreignKey: 'userId' });
+Comment.hasMany(CommentVote, { foreignKey: 'commentId', onDelete: 'CASCADE' });
+CommentVote.belongsTo(Comment, { foreignKey: 'commentId' });
+User.hasMany(CommentVote, { foreignKey: 'userId', onDelete: 'CASCADE' });
+CommentVote.belongsTo(User, { foreignKey: 'userId' });
 User.hasMany(Subscriber, { foreignKey: 'userId', onDelete: 'CASCADE' });
 Subscriber.belongsTo(User, { foreignKey: 'userId' });
 User.hasMany(Subscriber, { as: 'followers', foreignKey: 'followerId', onDelete: 'CASCADE' });
@@ -266,6 +308,9 @@ module.exports = {
   PostTag,
   Media,
   PageView,
+  Comment,
+  PostVote,
+  CommentVote,
   Subscriber,
   Setting,
   publishedWhere,

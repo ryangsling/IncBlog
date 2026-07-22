@@ -7,6 +7,9 @@ router.get('/unsubscribe', subscribers.unsubscribe);
 router.post('/blog/:username/subscribe', subscribers.subscribe);
 router.post('/blog/:username/follow', requireAuth, subscribers.follow);
 router.post('/blog/:username/unfollow', requireAuth, subscribers.unfollow);
+router.post('/blog/:username/:slug/comments', requireAuth, blog.createComment);
+router.post('/blog/:username/:slug/vote', requireAuth, blog.votePost);
+router.post('/blog/:username/:slug/comments/:commentId/vote', requireAuth, blog.voteComment);
 
 router.get('/blog/:username', blog.index);
 router.get('/blog/:username/sitemap.xml', blog.sitemap);
