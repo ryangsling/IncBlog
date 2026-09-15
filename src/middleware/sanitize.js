@@ -22,7 +22,7 @@ function sanitizePostHtml(dirty) {
   return sanitizeHtml(dirty || '', {
     allowedTags: ALLOWED_TAGS,
     allowedAttributes: ALLOWED_ATTRIBUTES,
-    allowedSchemes: ['http', 'https', 'mailto', 'data'],
+    allowedSchemes: ['http', 'https', 'mailto'],
     allowedSchemesByTag: { img: ['http', 'https', 'data'] },
     transformTags: {
       // Force safe link behavior on user content.

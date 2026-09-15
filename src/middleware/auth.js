@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 
-const SECRET = process.env.JWT_SECRET || 'incblog-secret';
+const SECRET = process.env.JWT_SECRET || 'incblog-dev-secret-change-me';
+const isProduction = process.env.NODE_ENV === 'production';
 
 function signToken(user) {
   return jwt.sign({ id: user.id }, SECRET, { expiresIn: '7d' });
@@ -11,6 +12,7 @@ function setAuthCookie(res, user) {
   res.cookie('token', signToken(user), {
     httpOnly: true,
     sameSite: 'lax',
+    secure: isProduction,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 }

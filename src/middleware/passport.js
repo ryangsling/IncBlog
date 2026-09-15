@@ -17,15 +17,27 @@ if (googleEnabled) {
       async (accessToken, refreshToken, profile, done) => {
         try {
           const email = profile.emails && profile.emails[0] && profile.emails[0].value;
+          const normalizedEmail = (email || '').trim().toLowerCase();
           let user = await User.findOne({ where: { googleId: profile.id } });
-          if (!user && email) {
-            user = await User.findOne({ where: { email } });
+          if (!user && normalizedEmail) {
+            user = await User.findOne({ where: { email: normalizedEmail } });
           }
           if (user) {
+            let shouldSave = false;
             if (!user.googleId) {
               user.googleId = profile.id;
-              await user.save();
+              shouldSave = true;
             }
+            if (!user.emailVerified) {
+              user.emailVerified = true;
+              user.emailVerifyToken = null;
+              shouldSave = true;
+            }
+            if (normalizedEmail && user.email !== normalizedEmail) {
+              user.email = normalizedEmail;
+              shouldSave = true;
+            }
+            if (shouldSave) await user.save();
             return done(null, user);
           }
           const name = profile.displayName || 'Writer';
