@@ -5,7 +5,6 @@
 <% if (error) { %><div class="notice notice-error"><%= error %></div><% } %>
 <div class="card">
   <form method="POST" action="/dashboard/media" enctype="multipart/form-data" class="upload-form">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <input type="file" name="file" accept="image/jpeg,image/png,image/gif,image/webp" required>
     <button class="btn btn-primary" type="submit">Upload</button>
     <span class="hint">JPEG, PNG, GIF or WebP up to 10MB. Converted to WebP automatically.</span>
@@ -23,7 +22,6 @@
     <div class="media-actions">
       <button type="button" class="btn btn-ghost btn-sm copy-url" data-url="<%= m.url %>">Copy URL</button>
       <form method="POST" action="/dashboard/media/<%= m.id %>/delete" data-confirm="Delete this file?" class="inline">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <button class="btn btn-danger btn-sm" type="submit">Delete</button>
       </form>
     </div>

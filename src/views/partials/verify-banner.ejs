@@ -3,7 +3,6 @@
   <span>Please verify your email — check your inbox for the verification link.</span>
   <span style="display:flex;gap:0.5rem;align-items:center;">
     <form method="POST" action="/resend-verification" style="display:inline">
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       <button class="btn btn-ghost btn-sm" type="submit">Resend</button>
     </form>
     <button type="button" data-verify-dismiss class="btn btn-ghost btn-sm" aria-label="Dismiss verification banner">&times;</button>

@@ -1,15 +1,14 @@
 const router = require('express').Router();
 const passport = require('../middleware/passport');
 const auth = require('../controllers/authController');
-const { authLimiter } = require('../middleware/rateLimit');
 
 router.get('/login', auth.showLogin);
-router.post('/login', authLimiter, auth.login);
+router.post('/login', auth.login);
 router.get('/register', auth.showRegister);
-router.post('/register', authLimiter, auth.register);
+router.post('/register', auth.register);
 router.get('/logout', auth.logout);
 router.get('/verify-email', auth.verifyEmail);
-router.post('/resend-verification', authLimiter, auth.resendVerification);
+router.post('/resend-verification', auth.resendVerification);
 
 router.get('/auth/google', (req, res, next) => {
   if (!passport.googleEnabled) {

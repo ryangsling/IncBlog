@@ -1,4 +1,4 @@
-const { createApp, registerAndGetCookie, postWithCsrf } = require('./setup');
+const { createApp, registerAndGetCookie } = require('./setup');
 const supertest = require('supertest');
 const { Media } = require('../src/models');
 
@@ -22,9 +22,10 @@ describe('Media', () => {
   });
 
   it('uploads an image', async () => {
-    const reqObj = await postWithCsrf(app, '/dashboard/media', { cookie, tokenPath: '/dashboard/media' });
-    cookie = reqObj.cookie || cookie;
-    const res = await reqObj.req.attach('file', TINY_PNG, { filename: 'test.png', contentType: 'image/png' });
+    const res = await supertest(app)
+      .post('/dashboard/media')
+      .set('Cookie', cookie)
+      .attach('file', TINY_PNG, { filename: 'test.png', contentType: 'image/png' });
     expect(res.status).toBe(302);
     const item = await Media.findOne({ order: [['createdAt', 'DESC']] });
     expect(item).toBeTruthy();
@@ -39,18 +40,17 @@ describe('Media', () => {
   });
 
   it('deletes a media item', async () => {
-    const reqObj = await postWithCsrf(app, `/dashboard/media/${mediaId}/delete`, { cookie, tokenPath: '/dashboard/media' });
-    cookie = reqObj.cookie || cookie;
-    const res = await reqObj.req;
+    const res = await supertest(app).post(`/dashboard/media/${mediaId}/delete`).set('Cookie', cookie);
     expect(res.status).toBe(302);
     const item = await Media.findByPk(mediaId);
     expect(item).toBeNull();
   });
 
   it('rejects non-image uploads', async () => {
-    const reqObj = await postWithCsrf(app, '/dashboard/media', { cookie, tokenPath: '/dashboard/media' });
-    cookie = reqObj.cookie || cookie;
-    const res = await reqObj.req.attach('file', Buffer.from('not an image'), { filename: 'test.txt', contentType: 'text/plain' });
+    const res = await supertest(app)
+      .post('/dashboard/media')
+      .set('Cookie', cookie)
+      .attach('file', Buffer.from('not an image'), { filename: 'test.txt', contentType: 'text/plain' });
     expect([400, 500]).toContain(res.status);
   });
 });
