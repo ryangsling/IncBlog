@@ -307,24 +307,14 @@ function showError(message) {
   setTimeout(() => { aiError.hidden = true; }, 6000);
 }
 
-function readCsrfToken() {
-  const tag = document.querySelector('meta[name="csrf-token"]');
-  return tag ? tag.getAttribute('content') : '';
-}
-
 async function callAi(endpoint, button) {
   const original = button.textContent;
   button.disabled = true;
   button.textContent = 'Thinking…';
   try {
-    const csrfToken = readCsrfToken();
     const res = await fetch(`/api/ai/${endpoint}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        ...(csrfToken ? { 'x-csrf-token': csrfToken } : {}),
-      },
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify({ title: titleInput.value, content: contentField.value }),
     });
     const data = await res.json();

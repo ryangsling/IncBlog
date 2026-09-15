@@ -39,7 +39,7 @@
   <% } else { %><p class="empty">No posts yet.</p><% } %>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
-<script nonce="<%= cspNonce %>">
+<script>
   const DAILY = <%- JSON.stringify(daily) %>;
   const ctx = document.getElementById('daily-chart');
   new Chart(ctx, {

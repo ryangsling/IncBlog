@@ -11,7 +11,6 @@
   <p>Free forever. No credit card.</p>
   <% if (error) { %><div class="notice notice-error"><%= error %></div><% } %>
   <form method="POST" action="/register">
-    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <label>Name
       <input type="text" name="name" value="<%= values.name || '' %>" required autofocus>
     </label>

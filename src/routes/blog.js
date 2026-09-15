@@ -2,12 +2,11 @@ const router = require('express').Router();
 const { requireAuth } = require('../middleware/auth');
 const blog = require('../controllers/blogController');
 const subscribers = require('../controllers/subscriberController');
-const { subscribeLimiter } = require('../middleware/rateLimit');
 
 router.get('/unsubscribe', subscribers.unsubscribe);
-router.post('/blog/:username/subscribe', subscribeLimiter, subscribers.subscribe);
-router.post('/blog/:username/follow', subscribeLimiter, requireAuth, subscribers.follow);
-router.post('/blog/:username/unfollow', subscribeLimiter, requireAuth, subscribers.unfollow);
+router.post('/blog/:username/subscribe', subscribers.subscribe);
+router.post('/blog/:username/follow', requireAuth, subscribers.follow);
+router.post('/blog/:username/unfollow', requireAuth, subscribers.unfollow);
 
 router.get('/blog/:username', blog.index);
 router.get('/blog/:username/sitemap.xml', blog.sitemap);

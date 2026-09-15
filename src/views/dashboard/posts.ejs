@@ -11,30 +11,27 @@
 </div>
 <div class="card">
   <% if (posts.length) { %>
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>Title</th><th>Status</th><th>Category</th><th>Views</th><th>Date</th><th>Actions</th></tr></thead>
-      <tbody>
-        <% posts.forEach(function(p) { %>
-        <tr>
-          <td><a href="/dashboard/posts/<%= p.id %>/edit"><%= p.title %></a></td>
-          <td><span class="badge badge-<%= p.status %>"><%= p.status %></span></td>
-          <td><%= p.Category ? p.Category.name : '—' %></td>
-          <td><%= p.views %></td>
-          <td><%= new Date(p.publishAt || p.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
-          <td class="actions">
-            <a class="btn btn-ghost btn-sm" href="/dashboard/posts/<%= p.id %>/edit">Edit</a>
-            <a class="btn btn-ghost btn-sm" href="/blog/<%= currentUser.username %>/<%= p.slug %>" target="_blank">View</a>
-            <form method="POST" action="/dashboard/posts/<%= p.id %>/delete" data-confirm="Delete this post?" class="inline">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <button class="btn btn-danger btn-sm" type="submit">Delete</button>
-            </form>
-          </td>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
+  <table>
+    <thead><tr><th>Title</th><th>Status</th><th>Category</th><th>Views</th><th>Date</th><th>Actions</th></tr></thead>
+    <tbody>
+      <% posts.forEach(function(p) { %>
+      <tr>
+        <td><a href="/dashboard/posts/<%= p.id %>/edit"><%= p.title %></a></td>
+        <td><span class="badge badge-<%= p.status %>"><%= p.status %></span></td>
+        <td><%= p.Category ? p.Category.name : '—' %></td>
+        <td><%= p.views %></td>
+        <td><%= new Date(p.publishAt || p.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
+        <td class="actions">
+          <a class="btn btn-ghost btn-sm" href="/dashboard/posts/<%= p.id %>/edit">Edit</a>
+          <a class="btn btn-ghost btn-sm" href="/blog/<%= currentUser.username %>/<%= p.slug %>" target="_blank">View</a>
+          <form method="POST" action="/dashboard/posts/<%= p.id %>/delete" data-confirm="Delete this post?" class="inline">
+            <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
   <% } else { %>
   <p class="empty">No posts found for this filter.</p>
   <% } %>

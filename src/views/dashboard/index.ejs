@@ -11,21 +11,19 @@
 <div class="card">
   <h2>Recent posts</h2>
   <% if (recentPosts.length) { %>
-  <div class="table-scroll">
-    <table>
-      <thead><tr><th>Title</th><th>Status</th><th>Views</th><th>Updated</th></tr></thead>
-      <tbody>
-        <% recentPosts.forEach(function(p) { %>
-        <tr>
-          <td><a href="/dashboard/posts/<%= p.id %>/edit"><%= p.title %></a></td>
-          <td><span class="badge badge-<%= p.status %>"><%= p.status %></span></td>
-          <td><%= p.views %></td>
-          <td><%= new Date(p.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
-  </div>
+  <table>
+    <thead><tr><th>Title</th><th>Status</th><th>Views</th><th>Updated</th></tr></thead>
+    <tbody>
+      <% recentPosts.forEach(function(p) { %>
+      <tr>
+        <td><a href="/dashboard/posts/<%= p.id %>/edit"><%= p.title %></a></td>
+        <td><span class="badge badge-<%= p.status %>"><%= p.status %></span></td>
+        <td><%= p.views %></td>
+        <td><%= new Date(p.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
   <% } else { %>
   <p class="empty">No posts yet. <a href="/dashboard/posts/new">Write your first post</a>.</p>
   <% } %>
