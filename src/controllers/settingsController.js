@@ -1,7 +1,9 @@
-const { Post, Tag, Category, Subscriber, Setting, PageView, Op } = require('../models');
+const { Post, Tag, Category, Media, Subscriber, Setting, PageView, Op } = require('../models');
 const { deleteUploadByUrl } = require('../middleware/upload');
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const DOMAIN_RE = /^(?=.{1,253}$)(?!-)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/;
+const GA_ID_RE = /^(G-[A-Z0-9]+|UA-\d+-\d+)$/i;
 
 async function getSettings(userId) {
   const [settings] = await Setting.findOrCreate({ where: { userId }, defaults: { userId } });
@@ -33,12 +35,20 @@ exports.update = async (req, res, next) => {
     settings.twitter = req.body.twitter || '';
     settings.github = req.body.github || '';
     settings.linkedin = req.body.linkedin || '';
-    settings.gaId = req.body.gaId || '';
+
+    const gaId = (req.body.gaId || '').trim();
+    if (gaId && !GA_ID_RE.test(gaId)) {
+      return res.redirect('/dashboard/settings?error=Invalid+Google+Analytics+ID+format');
+    }
+    settings.gaId = gaId;
     await settings.save();
 
     // Custom domain (simulated): normalize and store on the user
     let domain = (req.body.customDomain || '').trim().toLowerCase();
     domain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+    if (domain && !DOMAIN_RE.test(domain)) {
+      return res.redirect('/dashboard/settings?error=Invalid+custom+domain+format');
+    }
     req.user.customDomain = domain || null;
     await req.user.save();
 

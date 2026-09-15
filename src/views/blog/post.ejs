@@ -22,7 +22,7 @@
     </button>
     <div id="summary-box" class="summary-box" hidden>
       <div class="summary-box-label">Summary</div>
-      <p><%- post.summary %></p>
+      <p><%= post.summary %></p>
     </div>
   </div>
   <% } %>
@@ -42,6 +42,7 @@
       <% if (user.bio) { %><p><%= user.bio %></p><% } %>
       <% if (locals.currentUser && currentUser.id !== user.id) { %>
       <form method="POST" action="/blog/<%= user.username %>/<%= isFollowing ? 'unfollow' : 'follow' %>" style="margin-top: var(--spacing-8);">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
         <button class="btn <%= isFollowing ? 'btn-ghost' : 'btn-primary' %> btn-sm" type="submit"><%= isFollowing ? 'Unfollow' : '+ Follow' %></button>
       </form>
       <% } %>
@@ -49,7 +50,7 @@
   </div>
 </article>
 <% if (post.summary) { %>
-<script>
+<script nonce="<%= cspNonce %>">
   (function () {
     var btn = document.getElementById('summary-toggle');
     var box = document.getElementById('summary-box');

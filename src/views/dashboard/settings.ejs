@@ -5,6 +5,7 @@
 <% if (saved) { %><div class="notice">Settings saved.</div><% } %>
 <% if (error) { %><div class="notice notice-error"><%= error %></div><% } %>
 <form method="POST" action="/dashboard/settings">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <div class="card">
     <h2>Blog</h2>
     <label>Blog title
@@ -66,6 +67,7 @@
   <h2>Danger zone</h2>
   <p>Deleting your account permanently removes your posts, media, subscribers and settings. This cannot be undone.</p>
   <form method="POST" action="/dashboard/settings/delete-account" data-confirm="Permanently delete your account and all data?">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
     <label>Type <strong>DELETE</strong> to confirm
       <input type="text" name="confirm" placeholder="DELETE" required>
     </label>

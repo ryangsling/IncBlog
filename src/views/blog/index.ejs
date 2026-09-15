@@ -3,6 +3,7 @@
 <% if (settings.blogDescription) { %><p class="blog-description"><%= settings.blogDescription %></p><% } %>
 <% if (locals.currentUser && currentUser.id !== user.id) { %>
 <form method="POST" action="/blog/<%= user.username %>/<%= isFollowing ? 'unfollow' : 'follow' %>" style="margin-bottom: var(--spacing-16);">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <button class="btn <%= isFollowing ? 'btn-ghost' : 'btn-primary' %> btn-sm" type="submit"><%= isFollowing ? 'Unfollow' : '+ Follow' %></button>
 </form>
 <% } %>

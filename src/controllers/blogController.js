@@ -1,8 +1,18 @@
 const crypto = require('crypto');
 const { marked } = require('marked');
 const { User, Post, Tag, Category, PageView, Setting, Subscriber, publishedWhere } = require('../models');
+const { sanitizePostHtml } = require('../middleware/sanitize');
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+
+function escapeHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
 
 function readTime(content) {
   const words = (content || '').trim().split(/\s+/).filter(Boolean).length;
@@ -80,10 +90,18 @@ exports.post = async (req, res, next) => {
       });
     }
 
-    // HTML and plain format posts are rendered as-is; Markdown posts are parsed live.
-    const renderedHtml = (post.format === 'html' || post.format === 'plain')
-      ? (post.content || '')
-      : marked.parse(post.content || '');
+    // Defensive rendering for all formats.
+    // - html: sanitized on save, sanitized again before render.
+    // - markdown: parse then sanitize.
+    // - plain: escape HTML and preserve line breaks.
+    let renderedHtml = '';
+    if (post.format === 'plain') {
+      renderedHtml = (escapeHtml(post.content || '')).replace(/\n/g, '<br>');
+    } else if (post.format === 'html') {
+      renderedHtml = sanitizePostHtml(post.content || '');
+    } else {
+      renderedHtml = sanitizePostHtml(marked.parse(post.content || ''));
+    }
 
     let isFollowing = false;
     if (res.locals.currentUser && res.locals.currentUser.id !== ctx.user.id) {

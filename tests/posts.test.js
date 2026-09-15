@@ -1,4 +1,4 @@
-const { createApp, registerAndGetCookie } = require('./setup');
+const { createApp, registerAndGetCookie, postWithCsrf } = require('./setup');
 const supertest = require('supertest');
 const { Post, Category } = require('../src/models');
 const postController = require('../src/controllers/postController');
@@ -24,9 +24,9 @@ describe('Posts', () => {
 
   it('creates a post', async () => {
     const ts = Date.now();
-    const res = await supertest(app)
-      .post('/dashboard/posts')
-      .set('Cookie', cookie)
+    const { req, cookie: csrfCookie } = await postWithCsrf(app, '/dashboard/posts', { cookie, tokenPath: '/dashboard/posts/new' });
+    cookie = csrfCookie || cookie;
+    const res = await req
       .field('title', `Test Post ${ts}`)
       .field('content', 'Hello world')
       .field('status', 'draft')
@@ -49,9 +49,9 @@ describe('Posts', () => {
   });
 
   it('updates a post', async () => {
-    const res = await supertest(app)
-      .post(`/dashboard/posts/${postId}`)
-      .set('Cookie', cookie)
+    const { req, cookie: csrfCookie } = await postWithCsrf(app, `/dashboard/posts/${postId}`, { cookie, tokenPath: `/dashboard/posts/${postId}/edit` });
+    cookie = csrfCookie || cookie;
+    const res = await req
       .field('title', 'Updated Post')
       .field('content', 'Updated content')
       .field('status', 'published')
@@ -63,7 +63,9 @@ describe('Posts', () => {
   });
 
   it('deletes a post', async () => {
-    const res = await supertest(app).post(`/dashboard/posts/${postId}/delete`).set('Cookie', cookie);
+    const { req, cookie: csrfCookie } = await postWithCsrf(app, `/dashboard/posts/${postId}/delete`, { cookie, tokenPath: '/dashboard/posts' });
+    cookie = csrfCookie || cookie;
+    const res = await req;
     expect(res.status).toBe(302);
     const deleted = await Post.findByPk(postId, { paranoid: false });
     expect(deleted.deletedAt).toBeTruthy();
@@ -77,11 +79,11 @@ describe('Posts', () => {
 
   it('notifies subscribers when a draft is published, but not on subsequent edits', async () => {
     const ts = Date.now();
-    const ownCookie = (await registerAndGetCookie(app)).cookie;
+    let ownCookie = (await registerAndGetCookie(app)).cookie;
 
-    const createRes = await supertest(app)
-      .post('/dashboard/posts')
-      .set('Cookie', ownCookie)
+    const createReqObj = await postWithCsrf(app, '/dashboard/posts', { cookie: ownCookie, tokenPath: '/dashboard/posts/new' });
+    ownCookie = createReqObj.cookie || ownCookie;
+    const createRes = await createReqObj.req
       .field('title', `Idempotent Test ${ts}`)
       .field('content', 'Content')
       .field('status', 'draft');
@@ -90,25 +92,23 @@ describe('Posts', () => {
 
     const notifySpy = jest.spyOn(postController, 'notifySubscribers').mockResolvedValue();
 
-    // Transition: draft -> published. Should fire notifySubscribers once.
-    const publishRes = await supertest(app)
-      .post(`/dashboard/posts/${created.id}`)
-      .set('Cookie', ownCookie)
+    const publishReqObj = await postWithCsrf(app, `/dashboard/posts/${created.id}`, { cookie: ownCookie, tokenPath: `/dashboard/posts/${created.id}/edit` });
+    ownCookie = publishReqObj.cookie || ownCookie;
+    const publishRes = await publishReqObj.req
       .field('title', `Idempotent Test ${ts}`)
       .field('content', 'Updated content')
       .field('status', 'published');
     expect(publishRes.status).toBe(302);
     expect(notifySpy.mock.calls.length).toBe(1);
 
-    // Subsequent edit while still published. Should NOT re-fire.
-    const editRes = await supertest(app)
-      .post(`/dashboard/posts/${created.id}`)
-      .set('Cookie', ownCookie)
+    const editReqObj = await postWithCsrf(app, `/dashboard/posts/${created.id}`, { cookie: ownCookie, tokenPath: `/dashboard/posts/${created.id}/edit` });
+    ownCookie = editReqObj.cookie || ownCookie;
+    const editRes = await editReqObj.req
       .field('title', `Idempotent Test ${ts} (typo fix)`)
       .field('content', 'Updated content v2')
       .field('status', 'published');
     expect(editRes.status).toBe(302);
-    expect(notifySpy.mock.calls.length).toBe(1); // still 1, not 2
+    expect(notifySpy.mock.calls.length).toBe(1);
 
     notifySpy.mockRestore();
     await created.destroy({ force: true });

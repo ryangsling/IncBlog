@@ -49,6 +49,7 @@
           <a href="/blog/<%= p.author.username %>" style="font-weight: 500; color: var(--color-slate-dark);"><%= p.author.name %></a>
           <% if (locals.currentUser && currentUser.id !== p.author.id) { %>
           <form method="POST" action="/blog/<%= p.author.username %>/follow" style="display:inline;" class="inline-follow">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <button class="btn btn-ghost btn-sm" type="submit" style="padding:2px 8px; font-size:12px;">+ Follow</button>
           </form>
           <% } %>
@@ -103,7 +104,7 @@
     </div>
   </div>
 </footer>
-<script>
+<script nonce="<%= cspNonce %>">
 document.getElementById('category-filter')?.addEventListener('change', function() {
   const params = new URLSearchParams(window.location.search);
   params.set('category', this.value);

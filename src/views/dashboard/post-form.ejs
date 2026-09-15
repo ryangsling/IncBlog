@@ -3,6 +3,7 @@
   <h1><%= post ? 'Edit post' : 'New post' %></h1>
 </div>
 <form method="POST" action="<%= post ? '/dashboard/posts/' + post.id : '/dashboard/posts' %>" enctype="multipart/form-data" id="post-form" class="post-form">
+  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
   <div class="editor-col">
     <input type="text" name="title" id="title" class="title-input" placeholder="Post title" value="<%= post ? post.title : '' %>" required>
     <div class="ai-row">

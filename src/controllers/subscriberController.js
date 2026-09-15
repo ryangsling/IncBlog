@@ -5,6 +5,17 @@ const { sendMail } = require('../middleware/mailer');
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+function safeRedirectPath(req, fallback) {
+  const referer = req.get('referer');
+  if (!referer) return fallback;
+  try {
+    const parsed = new URL(referer);
+    return parsed.origin === `${req.protocol}://${req.get('host')}` ? `${parsed.pathname}${parsed.search}` : fallback;
+  } catch (err) {
+    return fallback;
+  }
+}
+
 exports.subscribe = async (req, res, next) => {
   try {
     const username = req.params.username;
@@ -106,13 +117,12 @@ exports.follow = async (req, res, next) => {
   try {
     const owner = await User.findOne({ where: { username: req.params.username } });
     if (!owner) return res.status(404).render('404', { title: 'Blog not found' });
-    if (owner.id === req.user.id) return res.redirect('back');
+    if (owner.id === req.user.id) return res.redirect(`/blog/${owner.username}`);
     const existing = await Subscriber.findOne({ where: { userId: owner.id, followerId: req.user.id } });
     if (!existing) {
       await Subscriber.create({ userId: owner.id, followerId: req.user.id, status: 'active' });
     }
-    const back = req.get('referer') || `/blog/${owner.username}`;
-    res.redirect(back);
+    res.redirect(safeRedirectPath(req, `/blog/${owner.username}`));
   } catch (err) {
     next(err);
   }
@@ -123,8 +133,7 @@ exports.unfollow = async (req, res, next) => {
     const owner = await User.findOne({ where: { username: req.params.username } });
     if (!owner) return res.status(404).render('404', { title: 'Blog not found' });
     await Subscriber.destroy({ where: { userId: owner.id, followerId: req.user.id } });
-    const back = req.get('referer') || `/blog/${owner.username}`;
-    res.redirect(back);
+    res.redirect(safeRedirectPath(req, `/blog/${owner.username}`));
   } catch (err) {
     next(err);
   }

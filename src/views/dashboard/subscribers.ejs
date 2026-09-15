@@ -14,18 +14,20 @@
     <button class="btn btn-primary" type="submit">Filter</button>
   </form>
   <% if (subscribers.length) { %>
-  <table>
-    <thead><tr><th>Email</th><th>Status</th><th>Subscribed</th></tr></thead>
-    <tbody>
-      <% subscribers.forEach(function(s) { %>
-      <tr>
-        <td><%= s.email %></td>
-        <td><span class="badge badge-<%= s.status === 'active' ? 'published' : 'draft' %>"><%= s.status %></span></td>
-        <td><%= new Date(s.subscribedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
-      </tr>
-      <% }) %>
-    </tbody>
-  </table>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Email</th><th>Status</th><th>Subscribed</th></tr></thead>
+      <tbody>
+        <% subscribers.forEach(function(s) { %>
+        <tr>
+          <td><%= s.email %></td>
+          <td><span class="badge badge-<%= s.status === 'active' ? 'published' : 'draft' %>"><%= s.status %></span></td>
+          <td><%= new Date(s.subscribedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
   <% } else { %>
   <p class="empty">No subscribers found.</p>
   <% } %>
