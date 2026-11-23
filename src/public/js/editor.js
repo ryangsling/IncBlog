@@ -2,7 +2,6 @@
 // ponytail: no framework; document.execCommand for WYSIWYG.
 
 const contentField = document.getElementById('content');
-const formatField = document.getElementById('format');
 const editorHost = document.getElementById('editor-host');
 const wordCountEl = document.getElementById('word-count');
 const titleInput = document.getElementById('title');
@@ -189,8 +188,16 @@ function openInsertMenu(anchor) {
   });
 }
 
-function insertFullImage(url) {
-  document.execCommand('insertHTML', false, `<p><img src="${url}" alt="" class="editor-img"></p>`);
+function insertFullImage(url, addSpacing = false) {
+  if (!URL.canParse(url, location.origin)) return;
+  const source = new URL(url, location.origin);
+  if (!['https:', 'http:'].includes(source.protocol)) return;
+  const image = document.createElement('img');
+  image.src = url;
+  image.alt = '';
+  image.className = 'editor-img';
+  const block = `<p>${image.outerHTML}</p>`;
+  document.execCommand('insertHTML', false, addSpacing ? `<p><br></p>${block}<p><br></p>` : block);
 }
 
 function closeInsertMenu() {
@@ -235,16 +242,15 @@ function onNormalPaste(e) {
   // Images embed anywhere, on their own block.
   if (looksLikeImage(url)) {
     e.preventDefault();
-    if (inEmpty) {
-      document.execCommand('insertHTML', false, `<p><img src="${url}" alt="" class="editor-img"></p>`);
-    } else {
-      document.execCommand('insertHTML', false, `<p><br></p><p><img src="${url}" alt="" class="editor-img"></p><p><br></p>`);
-    }
+    insertFullImage(url, !inEmpty);
     syncNormalFromDom();
     positionGutter();
   } else if (inEmpty) {
     e.preventDefault();
-    document.execCommand('insertHTML', false, `<p><a href="${url}">${url}</a></p>`);
+    const link = document.createElement('a');
+    link.href = url;
+    link.textContent = url;
+    document.execCommand('insertHTML', false, `<p>${link.outerHTML}</p>`);
     syncNormalFromDom();
     positionGutter();
   }

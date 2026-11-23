@@ -3,16 +3,17 @@
 <div class="post-list">
   <% posts.forEach(function(p) { %>
   <article class="post-card">
-    <h2><a href="/blog/<%= user.username %>/<%= p.slug %>"><%= p.title %></a></h2>
+    <h2><a href="<%= urls.post(p.slug) %>"><%= p.title %></a></h2>
     <p class="meta">
       <%= new Date(p.publishAt || p.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
-      · <%= readTime(p.content) %> min read
-      <% if (p.Category) { %> · <a href="/blog/<%= user.username %>/category/<%= p.Category.slug %>"><%= p.Category.name %></a><% } %>
+      · <%= p.readMinutes %> min read
+      <% if (p.Category) { %> · <a href="<%= urls.archive('category', p.Category.slug) %>"><%= p.Category.name %></a><% } %>
     </p>
     <% if (p.excerpt) { %><p class="excerpt"><%= p.excerpt %></p><% } %>
   </article>
   <% }) %>
   <% if (!posts.length) { %><p class="empty">No posts found.</p><% } %>
 </div>
-<p><a href="/blog/<%= user.username %>">← All posts</a></p>
+<p><a href="<%= urls.home %>">← All posts</a></p>
+<%- include('../partials/pagination') %>
 <%- include('../partials/blog-bottom') %>

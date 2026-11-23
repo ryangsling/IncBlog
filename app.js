@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { sessionSecret, trustProxy, production, cookieOptions } = require('./src/authConfig');
 const path = require('path');
 const express = require('express');
 const cookieParser = require('cookie-parser');
@@ -7,31 +8,43 @@ const session = require('express-session');
 const passport = require('./src/middleware/passport');
 const customDomain = require('./src/middleware/customDomain');
 const { attachUser } = require('./src/middleware/auth');
+const contentSecurityPolicy = require('./src/middleware/contentSecurityPolicy');
 const { initDb } = require('./src/models');
 const { startCron } = require('./src/cron');
+const { DatabaseSessionStore, sameOriginWrite } = require('./src/browserSecurity');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const chartScript = path.join(path.dirname(require.resolve('chart.js')), 'chart.umd.min.js');
 
 app.set('view engine', 'ejs');
+app.locals.canonicalMedia = require('./src/mediaUrls').canonicalMedia;
 app.set('views', path.join(__dirname, 'src', 'views'));
 app.disable('x-powered-by');
+app.set('trust proxy', trustProxy);
+app.use(contentSecurityPolicy);
+app.use(sameOriginWrite);
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '2mb' }));
 app.use(cookieParser());
 app.use(
   session({
-    secret: process.env.JWT_SECRET || 'incblog-session-secret',
+    secret: sessionSecret,
+    store: new DatabaseSessionStore(),
     resave: false,
     saveUninitialized: false,
-    cookie: { httpOnly: true, sameSite: 'lax' },
+    cookie: { ...cookieOptions, secure: production ? true : 'auto' },
   })
 );
 app.use(passport.initialize());
-app.use(express.static(path.join(__dirname, 'src', 'public')));
+app.get('/js/vendor/chart.umd.min.js', (req, res) => res.sendFile(chartScript));
+for (const directory of ['css', 'js', 'marked']) {
+  app.use('/' + directory, express.static(path.join(__dirname, 'src', 'public', directory)));
+}
 app.use(customDomain);
 app.use(attachUser);
+app.get('/uploads/:key', require('./src/controllers/mediaController').read);
 
 // Landing page
 app.get('/', (req, res) => {
@@ -60,23 +73,27 @@ app.use((req, res) => {
 // Error handler
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
-  console.error(err);
-  const message = err.message || 'Something went wrong';
-  if (req.xhr || (req.headers.accept || '').includes('application/json')) {
-    return res.status(500).json({ error: message });
+  const status = [400, 404, 409, 413, 415].includes(err.status) ? err.status : 500;
+  if (status === 500) console.error('Unexpected request error:', err.name);
+  const message = status === 500 ? 'Something went wrong.' : 'Invalid request.';
+  if (req.xhr || req.is('application/json') || (req.headers.accept || '').includes('application/json')) {
+    return res.status(status).json({ error: message });
   }
-  res.status(500).render('404', { title: 'Error', message });
+  return res.status(status).render('404', { title: 'Error', message });
 });
 
-initDb()
-  .then(() => {
-    startCron();
-    if (process.env.NODE_ENV === 'test') return; // ponytail: don't bind a port under test
-    app.listen(PORT, () => {
-      console.log(`IncBlog running at http://localhost:${PORT}`);
+if (require.main === module) {
+  initDb()
+    .then(() => {
+      startCron();
+      app.listen(PORT, () => {
+        console.log(`IncBlog listening on port ${PORT}`);
+      });
+    })
+    .catch((err) => {
+      console.error('Failed to initialize database:', err);
+      process.exit(1);
     });
-  })
-  .catch((err) => {
-    console.error('Failed to initialize database:', err);
-    process.exit(1);
-  });
+}
+
+module.exports = app;

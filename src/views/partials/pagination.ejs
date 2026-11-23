@@ -1,0 +1,7 @@
+<% if (totalPages > 1) { %>
+<nav class="filter-form" aria-label="Pagination">
+  <% if (currentPage > 1) { %><a rel="prev" class="btn btn-ghost btn-sm" href="?page=<%= currentPage - 1 %>">Previous</a><% } %>
+  <span>Page <%= currentPage %> of <%= totalPages %></span>
+  <% if (currentPage < totalPages) { %><a rel="next" class="btn btn-ghost btn-sm" href="?page=<%= currentPage + 1 %>">Next</a><% } %>
+</nav>
+<% } %>

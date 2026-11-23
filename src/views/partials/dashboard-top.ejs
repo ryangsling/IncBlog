@@ -20,7 +20,7 @@
   <div class="sidebar-footer">
     <a href="/explore">Explore</a>
     <a href="/blog/<%= currentUser.username %>" target="_blank">View blog ↗</a>
-    <a href="/logout">Log out</a>
+    <form method="POST" action="/logout"><button class="btn btn-ghost btn-sm" type="submit">Log out</button></form>
   </div>
 </aside>
 <main class="content">

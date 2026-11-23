@@ -1,5 +1,8 @@
-const { Post, Tag, Category, Subscriber, Setting, PageView, Op } = require('../models');
-const { deleteUploadByUrl } = require('../middleware/upload');
+const { requestedDomain, saveDomain } = require('../domainVerification');
+const { consumeDeletionProof } = require('../accountReauth');
+const { Post, Tag, Category, Subscriber, Setting, PageView, Media, User, UploadAsset, sequelize, Op } = require('../models');
+const { discardUploads } = require('../middleware/upload');
+const { embedFields, publicSettingsFields, validatedEmbed } = require('../settingsFields');
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
@@ -14,9 +17,11 @@ exports.show = async (req, res, next) => {
     res.render('dashboard/settings', {
       title: 'Settings',
       active: 'settings',
-      settings,
+      settings: publicSettingsFields(settings.get({ plain: true })),
       baseUrl: BASE_URL,
       saved: req.query.saved === '1',
+      reauth: req.query.reauth,
+      domainStatus: req.query.domain,
       error: req.query.error || null,
     });
   } catch (err) {
@@ -26,21 +31,29 @@ exports.show = async (req, res, next) => {
 
 exports.update = async (req, res, next) => {
   try {
+    const domain = requestedDomain(req.body.customDomain);
+    const embeds = Object.fromEntries(embedFields.map((field) => [field, validatedEmbed(field, req.body[field])]));
+    if (Object.values(embeds).includes(null)) {
+      const settings = await getSettings(req.user.id);
+      return res.status(400).render('dashboard/settings', {
+        title: 'Settings',
+        active: 'settings',
+        settings: publicSettingsFields(settings.get({ plain: true })),
+        baseUrl: BASE_URL,
+        saved: false,
+        reauth: null,
+        domainStatus: null,
+        error: 'Use HTTPS URLs for social links and a GA4 measurement ID (G-…) for analytics.',
+      });
+    }
     const settings = await getSettings(req.user.id);
     settings.blogTitle = req.body.blogTitle || '';
     settings.blogDescription = req.body.blogDescription || '';
     settings.footerText = req.body.footerText || '';
-    settings.twitter = req.body.twitter || '';
-    settings.github = req.body.github || '';
-    settings.linkedin = req.body.linkedin || '';
-    settings.gaId = req.body.gaId || '';
+    settings.set(embeds);
     await settings.save();
 
-    // Custom domain (simulated): normalize and store on the user
-    let domain = (req.body.customDomain || '').trim().toLowerCase();
-    domain = domain.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
-    req.user.customDomain = domain || null;
-    await req.user.save();
+    await saveDomain(req.user, domain, req.body.customDomainCanonical === '1');
 
     res.redirect('/dashboard/settings?saved=1');
   } catch (err) {
@@ -60,7 +73,7 @@ exports.exportData = async (req, res, next) => {
       where: { userId: user.id },
       order: [['subscribedAt', 'DESC']],
     });
-    const settings = await getSettings(user.id);
+    const settings = publicSettingsFields((await getSettings(user.id)).get({ plain: true }));
 
     const exportPayload = {
       exportedAt: new Date().toISOString(),
@@ -106,33 +119,38 @@ exports.exportData = async (req, res, next) => {
 
 exports.deleteAccount = async (req, res, next) => {
   try {
-    if ((req.body.confirm || '').trim() !== 'DELETE') {
+    if (typeof req.body?.confirm !== 'string' || req.body.confirm.trim() !== 'DELETE') {
       return res.redirect('/dashboard/settings?error=Type+DELETE+to+confirm+account+deletion');
+    }
+    if (!await consumeDeletionProof(req)) {
+      return res.redirect('/dashboard/settings?error=Confirm+your+identity+before+deleting+your+account');
     }
     const userId = req.user.id;
 
-    const posts = await Post.findAll({ where: { userId }, paranoid: false });
-    const postIds = posts.map((p) => p.id);
-    if (postIds.length) {
-      await PageView.destroy({ where: { postId: { [Op.in]: postIds } } });
-    }
-    for (const post of posts) {
-      await Promise.all([deleteUploadByUrl(post.featuredImage), deleteUploadByUrl(post.ogImage)]);
-    }
-    await Post.destroy({ where: { userId }, force: true });
+    const [posts, assets] = await Promise.all([
+      Post.findAll({ where: { userId }, paranoid: false }),
+      UploadAsset.findAll({ where: { ownerId: userId } }),
+    ]);
+    await sequelize.transaction(async (transaction) => {
+      const postIds = posts.map((post) => post.id);
+      if (postIds.length) {
+        await PageView.destroy({ where: { postId: { [Op.in]: postIds } }, transaction });
+      }
+      await Post.destroy({ where: { userId }, force: true, transaction });
+      await Media.destroy({ where: { userId }, transaction });
+      await Subscriber.destroy({ where: { [Op.or]: [{ userId }, { followerId: userId }] }, transaction });
+      await Setting.destroy({ where: { userId }, transaction });
+      await UploadAsset.destroy({ where: { ownerId: userId }, transaction });
+      await User.destroy({ where: { id: userId }, transaction });
+    });
 
-    const media = await Media.findAll({ where: { userId } });
-    for (const item of media) {
-      await Promise.all([deleteUploadByUrl(item.url), deleteUploadByUrl(item.thumbUrl)]);
-    }
-    await Media.destroy({ where: { userId } });
-    await Subscriber.destroy({ where: { userId } });
-    await Setting.destroy({ where: { userId } });
-    await deleteUploadByUrl(req.user.avatar);
-    await req.user.destroy();
-
-    res.clearCookie('token');
-    res.redirect('/');
+    await discardUploads(assets);
+    req.session.destroy((err) => {
+      if (err) return next(err);
+      res.clearCookie('connect.sid');
+      res.clearCookie('token');
+      return res.redirect('/');
+    });
   } catch (err) {
     next(err);
   }

@@ -1,5 +1,7 @@
-const { Post, Subscriber } = require('../models');
-const { processImage } = require('../middleware/upload');
+const { registerAsset } = require('../mediaAccess');
+const { Post, Subscriber, sequelize } = require('../models');
+const { processImage, discardUploads } = require('../middleware/upload');
+const passport = require('../middleware/passport');
 
 exports.home = async (req, res, next) => {
   try {
@@ -24,22 +26,31 @@ exports.showProfile = (req, res) => {
     title: 'Profile',
     active: 'profile',
     saved: req.query.saved === '1',
-    error: null,
+    googleEnabled: passport.googleEnabled,
+    googleLinked: req.query.google === 'linked' && Boolean(req.user.googleId),
+    error: req.query.google === 'failed' ? 'Google could not be linked. Check your IncBlog password and Google account.' : null,
   });
 };
 
 exports.updateProfile = async (req, res, next) => {
+  let asset;
   try {
     const user = req.user;
     user.name = (req.body.name || user.name).trim();
     user.bio = req.body.bio != null ? req.body.bio : user.bio;
     if (req.file) {
-      const img = await processImage(req.file.buffer, { thumbnail: false });
-      user.avatar = img.url;
+      asset = await processImage(req.file.buffer, { thumbnail: false });
+      user.avatar = asset.url;
+    } else if (req.body.removeAvatar === '1') {
+      user.avatar = null;
     }
-    await user.save();
+    await sequelize.transaction(async (transaction) => {
+      if (asset) await registerAsset(asset, user.id, transaction);
+      await user.save({ transaction });
+    });
     res.redirect('/dashboard/profile?saved=1');
   } catch (err) {
+    if (asset) await discardUploads([asset]);
     next(err);
   }
 };

@@ -1,4 +1,5 @@
 const cron = require('node-cron');
+const { cleanBrowserState } = require('./browserSecurity');
 const { Post, User, Op } = require('./models');
 const postController = require('./controllers/postController');
 
@@ -27,6 +28,7 @@ async function runCronTick() {
 
 function startCron() {
   cron.schedule('* * * * *', runCronTick);
+  cron.schedule('*/15 * * * *', () => cleanBrowserState().catch(() => console.error('Browser state cleanup failed.')));
 }
 
 module.exports = { startCron, runCronTick };

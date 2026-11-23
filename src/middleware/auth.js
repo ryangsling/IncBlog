@@ -1,16 +1,16 @@
+const { randomUUID } = require('node:crypto');
 const jwt = require('jsonwebtoken');
-const { User } = require('../models');
-
-const SECRET = process.env.JWT_SECRET || 'incblog-secret';
+const { User, DisabledLogin } = require('../models');
+const { jwtSecret, production, cookieOptions } = require('../authConfig');
 
 function signToken(user) {
-  return jwt.sign({ id: user.id }, SECRET, { expiresIn: '7d' });
+  return jwt.sign({ id: user.id }, jwtSecret, { algorithm: 'HS256', expiresIn: '7d', jwtid: randomUUID() });
 }
 
 function setAuthCookie(res, user) {
   res.cookie('token', signToken(user), {
-    httpOnly: true,
-    sameSite: 'lax',
+    ...cookieOptions,
+    secure: production || res.req.secure,
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 }
@@ -18,12 +18,14 @@ function setAuthCookie(res, user) {
 async function getUserFromRequest(req) {
   const token = req.cookies && req.cookies.token;
   if (!token) return null;
+  let payload;
   try {
-    const payload = jwt.verify(token, SECRET);
-    return await User.findByPk(payload.id);
+    payload = jwt.verify(token, jwtSecret, { algorithms: ['HS256'] });
   } catch (err) {
     return null;
   }
+  if (await DisabledLogin.findByPk(payload.id)) return null;
+  return User.findByPk(payload.id);
 }
 
 async function attachUser(req, res, next) {

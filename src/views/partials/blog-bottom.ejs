@@ -17,7 +17,7 @@
       <% if (settings.linkedin) { %><a href="<%= settings.linkedin %>" target="_blank" rel="noopener">LinkedIn</a><% } %>
     </div>
     <p><%= settings.footerText || ('© ' + new Date().getFullYear() + ' ' + user.name) %></p>
-    <p class="powered">Powered by <a href="/">IncBlog</a> · <a href="/blog/<%= user.username %>/rss.xml">RSS</a> · <a href="/blog/<%= user.username %>/sitemap.xml">Sitemap</a></p>
+    <p class="powered">Powered by <a href="/">IncBlog</a> · <a href="<%= urls.rss %>">RSS</a> · <a href="<%= urls.sitemap %>">Sitemap</a></p>
   </div>
 </footer>
 </body>

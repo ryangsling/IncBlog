@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": false,
+    "noEmit": true,
+    "strict": true,
+    "module": "Node16",
+    "target": "ES2022",
+    "types": ["node"]
+  },
+  "files": ["src/seoUrls.js", "src/seoMetadata.js", "src/blogContext.js"]
+}

@@ -6,40 +6,46 @@
   "scripts": {
     "dev": "nodemon app.js",
     "start": "node app.js",
-    "test": "jest --forceExit --detectOpenHandles"
+    "db:prepare": "node -r dotenv/config scripts/prepare-db.js",
+    "test": "jest --forceExit --detectOpenHandles",
+    "typecheck": "tsc -p tsconfig.seo.json"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1075.0",
     "bcryptjs": "^2.4.3",
+    "chart.js": "^4.6.1",
     "cookie-parser": "^1.4.6",
     "dotenv": "^16.4.5",
     "ejs": "^3.1.10",
-    "express": "^4.19.2",
+    "express": "^4.22.3",
     "express-session": "^1.18.0",
     "gsap": "^3.15.0",
     "jsonwebtoken": "^9.0.2",
     "marked": "^12.0.2",
-    "multer": "^1.4.5-lts.1",
+    "multer": "^2.5.0",
     "node-cron": "^4.5.0",
-    "nodemailer": "^6.9.13",
+    "nodemailer": "^10.6.1",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "pell": "^1.0.6",
     "pg": "^8.22.0",
     "pg-hstore": "^2.3.4",
     "resend": "^6.14.0",
-    "sanitize-html": "^2.17.6",
-    "sequelize": "^6.37.3",
-    "sharp": "^0.33.4",
+    "sanitize-html": "^2.18.2",
+    "sequelize": "^6.37.8",
+    "sharp": "^0.35.5",
     "slugify": "^1.6.6",
-    "sqlite3": "^5.1.7"
+    "sqlite3": "^6.0.1"
   },
   "devDependencies": {
-    "@babel/preset-env": "^8.0.2",
+    "@babel/core": "^7.29.13",
+    "@babel/preset-env": "^7.29.14",
+    "@types/node": "^24.19.2",
     "jest": "^30.4.2",
     "jsdom": "^29.1.1",
     "nodemon": "^3.1.0",
-    "supertest": "^7.2.2"
+    "supertest": "^7.2.2",
+    "typescript": "^5.9.3"
   },
   "jest": {
     "setupFiles": [
@@ -51,5 +57,13 @@
     "transformIgnorePatterns": [
       "/node_modules/(?!(dom-serializer|domelementtype|domhandler|domutils|entities|htmlparser2|nanoid|sanitize-html)/)"
     ]
+  },
+  "engines": {
+    "node": "^22.13.0 || >=24.0.0"
+  },
+  "overrides": {
+    "sequelize": {
+      "uuid": "^11.1.1"
+    }
   }
 }

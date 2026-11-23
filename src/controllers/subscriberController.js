@@ -1,54 +1,76 @@
+const { featuredImages } = require('../mediaAccess');
 const crypto = require('crypto');
-const { User, Subscriber, Setting, Post, Category, Tag, Op, publishedWhere } = require('../models');
+const { User, Subscriber, Post, Category, Tag, Op, publishedWhere } = require('../models');
 const { sendMail } = require('../middleware/mailer');
+const { emailAddress, issueEmailToken, emailTokenHash } = require('../browserSecurity');
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const consentPrefix = 'consented:';
+const unsubscribeToken = /^(?:consented:[a-f0-9]{64}|[a-f0-9]{48})$/;
 
 exports.subscribe = async (req, res, next) => {
   try {
+    const email = emailAddress(req.body?.email);
     const username = req.params.username;
-    const email = (req.body.email || '').trim().toLowerCase();
+    if (!email || !/^[a-z0-9-]{1,255}$/.test(username)) return res.status(400).send('Enter a valid email address.');
     const user = await User.findOne({ where: { username } });
     if (!user) return res.status(404).render('404', { title: 'Blog not found' });
-    if (!EMAIL_RE.test(email)) return res.redirect(`/blog/${username}?subscribed=0`);
-
-    let sub = await Subscriber.findOne({ where: { userId: user.id, email } });
-    if (sub) {
-      if (sub.status === 'unsubscribed') {
-        sub.status = 'active';
-        sub.subscribedAt = new Date();
-        await sub.save();
-      }
-    } else {
-      sub = await Subscriber.create({
-        userId: user.id,
-        email,
-        token: crypto.randomBytes(24).toString('hex'),
-      });
-      const settings = await Setting.findOne({ where: { userId: user.id } });
-      const blogTitle = (settings && settings.blogTitle) || `${user.name}'s Blog`;
-      await sendMail({
-        to: email,
-        subject: `You're subscribed to ${blogTitle}`,
-        html: `<p>Thanks for subscribing to <strong>${blogTitle}</strong>!</p><p><a href="${BASE_URL}/unsubscribe?token=${sub.token}">Unsubscribe</a></p>`,
-      });
+    const verification = issueEmailToken();
+    const pending = `pending:${verification.hash}`;
+    const [subscriber, created] = await Subscriber.findOrCreate({ where: { userId: user.id, email },
+      defaults: { status: 'unsubscribed', token: pending } });
+    let send = created;
+    if (!created && !(subscriber.status === 'active' && subscriber.token?.startsWith(consentPrefix))) {
+      [send] = await Subscriber.update({ status: 'unsubscribed', token: pending },
+        { where: { id: subscriber.id, token: subscriber.token, status: subscriber.status } });
     }
-    res.redirect(`/blog/${username}?subscribed=1`);
+    if (send) {
+      const url = new URL('/confirm-subscription', BASE_URL);
+      url.searchParams.set('token', verification.token);
+      await sendMail({ to: email, subject: 'Confirm your IncBlog subscription',
+        html: `<p><a href="${url}">Confirm your subscription</a>. The link expires in 24 hours.</p>` });
+    }
+    return res.redirect(`/blog/${username}?subscribed=1`);
   } catch (err) {
     next(err);
   }
 };
 
+exports.showConfirmation = (req, res) => {
+  const token = req.query.token;
+  res.set('Cache-Control', 'no-store').set('Referrer-Policy', 'same-origin');
+  if (!emailTokenHash(token)) return res.status(400).send('Invalid or expired subscription link.');
+  return res.render('email-confirmation', { title: 'Confirm subscription', action: '/confirm-subscription', token });
+};
+
+exports.confirm = async (req, res, next) => {
+  try {
+    const hash = emailTokenHash(req.body?.token);
+    if (!hash) return res.status(400).send('Invalid or expired subscription link.');
+    const [updated] = await Subscriber.update({
+      token: consentPrefix + crypto.randomBytes(32).toString('hex'), status: 'active', subscribedAt: new Date(),
+    }, { where: { token: `pending:${hash}`, email: { [Op.ne]: null }, status: 'unsubscribed' } });
+    if (!updated) return res.status(400).send('Invalid or expired subscription link.');
+    return res.render('email-confirmation', { title: 'Subscription confirmed', action: null });
+  } catch (err) {
+    next(err);
+  }
+};
+
+exports.showUnsubscribe = (req, res) => {
+  const token = req.query.token;
+  res.set('Cache-Control', 'no-store').set('Referrer-Policy', 'same-origin');
+  if (typeof token !== 'string' || !unsubscribeToken.test(token)) return res.status(400).send('Invalid unsubscribe link.');
+  return res.render('email-confirmation', { title: 'Unsubscribe', action: '/unsubscribe', token });
+};
+
 exports.unsubscribe = async (req, res, next) => {
   try {
-    const token = req.query.token || '';
-    const sub = token ? await Subscriber.findOne({ where: { token } }) : null;
-    if (sub && sub.status !== 'unsubscribed') {
-      sub.status = 'unsubscribed';
-      await sub.save();
-    }
-    res.render('unsubscribe', { title: 'Unsubscribe', success: Boolean(sub) });
+    const token = req.body?.token;
+    if (typeof token !== 'string' || !unsubscribeToken.test(token)) return res.status(400).send('Invalid unsubscribe link.');
+    const [updated] = await Subscriber.update({ status: 'unsubscribed' },
+      { where: { token, email: { [Op.ne]: null }, status: 'active' } });
+    return res.render('unsubscribe', { title: 'Unsubscribe', success: Boolean(updated) });
   } catch (err) {
     next(err);
   }
@@ -106,13 +128,12 @@ exports.follow = async (req, res, next) => {
   try {
     const owner = await User.findOne({ where: { username: req.params.username } });
     if (!owner) return res.status(404).render('404', { title: 'Blog not found' });
-    if (owner.id === req.user.id) return res.redirect('back');
+    if (owner.id === req.user.id) return res.redirect(`/blog/${owner.username}`);
     const existing = await Subscriber.findOne({ where: { userId: owner.id, followerId: req.user.id } });
     if (!existing) {
       await Subscriber.create({ userId: owner.id, followerId: req.user.id, status: 'active' });
     }
-    const back = req.get('referer') || `/blog/${owner.username}`;
-    res.redirect(back);
+    res.redirect(`/blog/${owner.username}`);
   } catch (err) {
     next(err);
   }
@@ -123,8 +144,7 @@ exports.unfollow = async (req, res, next) => {
     const owner = await User.findOne({ where: { username: req.params.username } });
     if (!owner) return res.status(404).render('404', { title: 'Blog not found' });
     await Subscriber.destroy({ where: { userId: owner.id, followerId: req.user.id } });
-    const back = req.get('referer') || `/blog/${owner.username}`;
-    res.redirect(back);
+    res.redirect(`/blog/${owner.username}`);
   } catch (err) {
     next(err);
   }
@@ -142,6 +162,7 @@ exports.followingFeed = async (req, res, next) => {
           order: [['publishAt', direction]],
         })
       : [];
+    await featuredImages(posts);
     res.render('dashboard/following', { title: 'Following', active: 'following', posts, sort });
   } catch (err) {
     next(err);

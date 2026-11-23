@@ -1,19 +1,25 @@
 const path = require('path');
+const { existsSync } = require('node:fs');
 const bcrypt = require('bcryptjs');
 const slugify = require('slugify');
+const { readingMinutes } = require('../readingTime');
+const { databaseTls } = require('../databaseTls');
 const { Sequelize, DataTypes, Op } = require('sequelize');
+const googleSubjectIndex = { name: 'users_google_id_unique', unique: true, fields: ['googleId'] };
 
 const sequelize = process.env.DATABASE_URL
   ? new Sequelize(process.env.DATABASE_URL, {
       dialect: 'postgres',
       logging: false,
-      dialectOptions: { ssl: { require: true, rejectUnauthorized: false } },
+      dialectOptions: { ssl: databaseTls(process.env.DATABASE_URL) },
     })
   : new Sequelize({
       dialect: 'sqlite',
       storage: process.env.DATABASE_FILE || path.join(__dirname, '..', '..', 'incblog.db'),
       logging: false,
     });
+
+const primarySchema = sequelize.getDialect() === 'postgres' ? 'public' : undefined;
 
 const User = sequelize.define(
   'User',
@@ -25,11 +31,15 @@ const User = sequelize.define(
     bio: { type: DataTypes.TEXT, defaultValue: '' },
     avatar: { type: DataTypes.STRING },
     customDomain: { type: DataTypes.STRING },
+    customDomainChallenge: { type: DataTypes.STRING },
+    customDomainVerifiedAt: { type: DataTypes.DATE },
+    customDomainCanonical: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
     googleId: { type: DataTypes.STRING },
+    blogRevision: { type: DataTypes.BIGINT, allowNull: false, defaultValue: 0 },
     emailVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
     emailVerifyToken: { type: DataTypes.STRING, unique: true },
   },
-  { tableName: 'users' }
+  { tableName: 'users', schema: primarySchema, indexes: [googleSubjectIndex] }
 );
 
 const Category = sequelize.define(
@@ -47,6 +57,7 @@ const Post = sequelize.define(
     title: { type: DataTypes.STRING, allowNull: false },
     slug: { type: DataTypes.STRING, allowNull: false },
     content: { type: DataTypes.TEXT, defaultValue: '' },
+    readMinutes: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
     excerpt: { type: DataTypes.TEXT, defaultValue: '' },
     summary: { type: DataTypes.TEXT, defaultValue: '' },
     metaTitle: { type: DataTypes.STRING, defaultValue: '' },
@@ -58,8 +69,24 @@ const Post = sequelize.define(
     views: { type: DataTypes.INTEGER, defaultValue: 0 },
     format: { type: DataTypes.ENUM('markdown', 'html', 'plain'), defaultValue: 'markdown' },
   },
-  { tableName: 'posts', paranoid: true }
+  { tableName: 'posts', schema: primarySchema, paranoid: true }
 );
+
+Post.beforeSave((post) => {
+  if (post.isNewRecord || post.changed('content')) post.readMinutes = readingMinutes(post.content);
+});
+Post.beforeBulkCreate((posts, options) => {
+  if (!options.fields.includes('readMinutes')) options.fields.push('readMinutes');
+  for (const post of posts) post.readMinutes = readingMinutes(post.content);
+  if (options.updateOnDuplicate?.includes('content') && !options.updateOnDuplicate.includes('readMinutes')) {
+    options.updateOnDuplicate.push('readMinutes');
+  }
+});
+Post.beforeBulkUpdate((options) => {
+  if (typeof options.attributes.content !== 'string' && options.attributes.content !== null) return;
+  options.attributes.readMinutes = readingMinutes(options.attributes.content);
+  if (!options.fields.includes('readMinutes')) options.fields.push('readMinutes');
+});
 
 const Tag = sequelize.define(
   'Tag',
@@ -91,6 +118,7 @@ const PageView = sequelize.define(
     date: { type: DataTypes.DATEONLY, allowNull: false },
     userAgent: { type: DataTypes.STRING },
     ipHash: { type: DataTypes.STRING },
+    sessionKey: { type: DataTypes.STRING },
   },
   { tableName: 'page_views', updatedAt: false }
 );
@@ -104,8 +132,28 @@ const Subscriber = sequelize.define(
     subscribedAt: { type: DataTypes.DATE, defaultValue: DataTypes.NOW },
     followerId: { type: DataTypes.INTEGER, allowNull: true },
   },
-  { tableName: 'subscribers' }
+  { tableName: 'subscribers', indexes: [{ name: 'subscribers_owner_email_unique', unique: true, fields: ['userId', 'email'] }] }
 );
+
+const browserStateSchema = sequelize.getDialect() === 'postgres' ? 'incblog_private' : undefined;
+
+const BrowserSession = sequelize.define('BrowserSession', {
+  sid: { type: DataTypes.STRING, primaryKey: true },
+  data: { type: DataTypes.JSON, allowNull: false },
+  expiresAt: { type: DataTypes.BIGINT, allowNull: false },
+}, { tableName: 'browser_sessions', schema: browserStateSchema, timestamps: false, indexes: [{ fields: ['expiresAt'] }] });
+
+const BrowserRateLimit = sequelize.define('BrowserRateLimit', {
+  key: { type: DataTypes.STRING, primaryKey: true },
+  count: { type: DataTypes.INTEGER, allowNull: false },
+  expiresAt: { type: DataTypes.BIGINT, allowNull: false },
+}, { tableName: 'browser_rate_limits', schema: browserStateSchema, timestamps: false, indexes: [{ fields: ['expiresAt'] }] });
+
+const AccountProof = sequelize.define('AccountProof', {
+  key: { type: DataTypes.STRING, primaryKey: true },
+  value: { type: DataTypes.STRING, allowNull: false },
+  expiresAt: { type: DataTypes.BIGINT, allowNull: false },
+}, { tableName: 'account_proofs', schema: browserStateSchema, timestamps: false, indexes: [{ fields: ['expiresAt'] }] });
 
 const Setting = sequelize.define(
   'Setting',
@@ -120,6 +168,40 @@ const Setting = sequelize.define(
   },
   { tableName: 'settings' }
 );
+
+const UploadAsset = sequelize.define('UploadAsset', {
+  key: { type: DataTypes.STRING, primaryKey: true },
+  ownerId: { type: DataTypes.INTEGER, allowNull: false },
+  backend: { type: DataTypes.STRING, allowNull: false },
+  objects: { type: DataTypes.JSON, allowNull: false },
+}, { tableName: 'upload_assets', schema: browserStateSchema, timestamps: false, indexes: [{ fields: ['ownerId'] }] });
+
+const PostAsset = sequelize.define('PostAsset', {
+  postId: { type: DataTypes.INTEGER, primaryKey: true },
+  assetKey: { type: DataTypes.STRING, primaryKey: true },
+}, { tableName: 'post_assets', schema: browserStateSchema, timestamps: false, indexes: [{ fields: ['assetKey'] }] });
+
+const DisabledLogin = sequelize.define('DisabledLogin', {
+  userId: { type: DataTypes.INTEGER, primaryKey: true },
+}, { tableName: 'disabled_logins', schema: browserStateSchema, timestamps: false });
+DisabledLogin.belongsTo(User, { foreignKey: 'userId', onDelete: 'CASCADE' });
+
+const PostSlug = sequelize.define('PostSlug', {
+  userId: { type: DataTypes.INTEGER, primaryKey: true },
+  slug: { type: DataTypes.STRING, primaryKey: true },
+  postId: { type: DataTypes.INTEGER, allowNull: false },
+  wasPublic: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+}, { tableName: 'post_slugs', schema: browserStateSchema, timestamps: false });
+PostSlug.belongsTo(Post, { foreignKey: 'postId', onDelete: 'CASCADE' });
+PostSlug.belongsTo(User, { foreignKey: 'userId', onDelete: 'CASCADE' });
+
+const SchemaMigration = sequelize.define('SchemaMigration', {
+  version: { type: DataTypes.INTEGER, primaryKey: true },
+}, { tableName: 'schema_migrations', schema: browserStateSchema, timestamps: false });
+
+PostAsset.belongsTo(Post, { foreignKey: 'postId', onDelete: 'CASCADE' });
+PostAsset.belongsTo(UploadAsset, { foreignKey: 'assetKey', onDelete: 'CASCADE' });
+UploadAsset.belongsTo(User, { foreignKey: 'ownerId', onDelete: 'CASCADE' });
 
 // Associations
 User.hasMany(Post, { foreignKey: 'userId', onDelete: 'CASCADE' });
@@ -140,16 +222,14 @@ User.hasOne(Setting, { foreignKey: 'userId', onDelete: 'CASCADE' });
 Setting.belongsTo(User, { foreignKey: 'userId' });
 
 // A post is publicly visible when published, or scheduled with a publish time in the past.
-function publishedWhere() {
+function publishedWhere(now = new Date()) {
   return {
     [Op.or]: [
       { status: 'published' },
-      { status: 'scheduled', publishAt: { [Op.lte]: new Date() } },
+      { status: 'scheduled', publishAt: { [Op.lte]: now } },
     ],
   };
 }
-
-const CATEGORY_NAMES = ['Tech', 'Design', 'Business', 'Personal', 'Other'];
 
 const SAMPLE_POSTS = [
   {
@@ -178,14 +258,7 @@ const SAMPLE_POSTS = [
   },
 ];
 
-async function seed() {
-  for (const name of CATEGORY_NAMES) {
-    await Category.findOrCreate({
-      where: { slug: slugify(name, { lower: true }) },
-      defaults: { name, slug: slugify(name, { lower: true }) },
-    });
-  }
-
+async function seedDemo() {
   const userCount = await User.count();
   if (userCount > 0) return;
 
@@ -232,11 +305,20 @@ async function seed() {
 }
 
 async function initDb() {
-  // ponytail: alter:true is fragile on SQLite (FK + ENUM changes force full rebuilds that fail).
-  // Dev uses SQLite only — reset on start and reseed. Prod uses Postgres + alter to preserve data.
-  const isProd = process.env.NODE_ENV === 'production';
-  await sequelize.sync({ force: !isProd, alter: isProd });
-  await seed();
+  if (sequelize.getDialect() === 'postgres' || process.env.NODE_ENV === 'production') {
+    if (sequelize.getDialect() === 'sqlite' &&
+      (!process.env.DATABASE_FILE || !existsSync(sequelize.options.storage))) {
+      throw new Error('Production SQLite requires an existing, explicitly configured DATABASE_FILE.');
+    }
+    await require('../migrations').assertMigrations();
+    return;
+  }
+
+  await require('../migrations').runMigrations();
+  if ((process.env.NODE_ENV === 'test' && sequelize.options.storage === ':memory:') ||
+      (process.env.NODE_ENV === 'development' && process.env.SEED_DEMO === 'true')) {
+    await seedDemo();
+  }
 }
 
 module.exports = {
@@ -253,5 +335,13 @@ module.exports = {
   Subscriber,
   Setting,
   publishedWhere,
+  BrowserSession,
+  BrowserRateLimit,
+  AccountProof,
+  UploadAsset,
+  PostAsset,
+  PostSlug,
+  SchemaMigration,
+  DisabledLogin,
   initDb,
 };
