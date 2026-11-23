@@ -1,5 +1,5 @@
 const { createApp, registerAndGetCookie } = require('./setup');
-const supertest = require('supertest');
+const supertest = require('./browser');
 const { Post, Category } = require('../src/models');
 const postController = require('../src/controllers/postController');
 

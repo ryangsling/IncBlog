@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<%- include('partials/head') %>
+<title><%= title %> · IncBlog</title>
+</head>
+<body class="auth">
+<main class="auth-card card">
+  <h1><%= title %></h1>
+  <% if (action) { %>
+  <form method="POST" action="<%= action %>">
+    <input type="hidden" name="token" value="<%= token %>">
+    <button class="btn btn-primary" type="submit"><%= title %></button>
+  </form>
+  <% } else { %>
+  <a href="/">Continue to IncBlog</a>
+  <% } %>
+</main>
+</body>
+</html>

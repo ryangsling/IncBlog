@@ -6,3 +6,5 @@ src/public/uploads/*
 
 # Test coverage output
 coverage/
+
+incblog-media/

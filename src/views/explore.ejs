@@ -12,7 +12,7 @@
       <a href="/explore" class="active">Explore</a>
       <% if (locals.currentUser) { %>
       <a href="/dashboard">Dashboard</a>
-      <a href="/logout">Log out</a>
+      <form method="POST" action="/logout"><button class="btn btn-ghost btn-sm" type="submit">Log out</button></form>
       <% } else { %>
       <a href="/login">Log in</a>
       <a class="btn btn-primary btn-sm" href="/register">Get started</a>
@@ -43,19 +43,19 @@
 
     <div class="post-list">
       <% if (posts.length) { %>
-      <% posts.forEach(function(p) { %>
+      <% posts.forEach(function(p) { const urls = urlsFor(p.author); %>
       <article class="post-card">
         <p class="meta">
-          <a href="/blog/<%= p.author.username %>" style="font-weight: 500; color: var(--color-slate-dark);"><%= p.author.name %></a>
+          <a href="<%= urls.home %>" style="font-weight: 500; color: var(--color-slate-dark);"><%= p.author.name %></a>
           <% if (locals.currentUser && currentUser.id !== p.author.id) { %>
           <form method="POST" action="/blog/<%= p.author.username %>/follow" style="display:inline;" class="inline-follow">
             <button class="btn btn-ghost btn-sm" type="submit" style="padding:2px 8px; font-size:12px;">+ Follow</button>
           </form>
           <% } %>
           · <%= new Date(p.publishAt || p.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
-          <% if (p.Category) { %> · <a href="/blog/<%= p.author.username %>/category/<%= p.Category.slug %>"><%= p.Category.name %></a><% } %>
+          <% if (p.Category) { %> · <a href="<%= urls.archive('category', p.Category.slug) %>"><%= p.Category.name %></a><% } %>
         </p>
-        <h2><a href="/blog/<%= p.author.username %>/<%= p.slug %>"><%= p.title %></a></h2>
+        <h2><a href="<%= urls.post(p.slug) %>"><%= p.title %></a></h2>
         <% if (p.excerpt) { %><p class="excerpt"><%= p.excerpt %></p><% } %>
       </article>
       <% }) %>
@@ -103,7 +103,7 @@
     </div>
   </div>
 </footer>
-<script>
+<script nonce="<%= cspNonce %>">
 document.getElementById('category-filter')?.addEventListener('change', function() {
   const params = new URLSearchParams(window.location.search);
   params.set('category', this.value);

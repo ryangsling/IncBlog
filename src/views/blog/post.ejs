@@ -1,15 +1,11 @@
-<%- include('../partials/blog-top', {
-  metaDescription: post.metaDescription || post.excerpt || '',
-  ogTitle: post.metaTitle || post.title,
-  ogImage: post.ogImage || post.featuredImage || ''
-}) %>
+<%- include('../partials/blog-top') %>
 <article class="post">
   <h1 class="post-title"><%= post.title %></h1>
   <p class="meta">
     <%= new Date(post.publishAt || post.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) %>
-    · <%= readTime %> min read
+    · <%= post.readMinutes %> min read
     · <%= post.views %> views
-    <% if (post.Category) { %> · <a href="/blog/<%= user.username %>/category/<%= post.Category.slug %>"><%= post.Category.name %></a><% } %>
+    <% if (post.Category) { %> · <a href="<%= urls.archive('category', post.Category.slug) %>"><%= post.Category.name %></a><% } %>
   </p>
   <% if (post.summary) { %>
   <div class="summary-skip">
@@ -22,21 +18,21 @@
     </button>
     <div id="summary-box" class="summary-box" hidden>
       <div class="summary-box-label">Summary</div>
-      <p><%- post.summary %></p>
+      <p><%= post.summary %></p>
     </div>
   </div>
   <% } %>
-  <% if (post.featuredImage) { %><img class="post-featured" src="<%= post.featuredImage %>" alt="<%= post.title %>"><% } %>
+  <%- include('../partials/featured-image', { image: post.featuredDisplay, title: post.title, hero: true }) %>
   <div class="post-content"><%- html %></div>
   <% if (post.Tags && post.Tags.length) { %>
   <div class="tag-list">
     <% post.Tags.forEach(function(t) { %>
-    <a class="tag" href="/blog/<%= user.username %>/tag/<%= t.slug %>">#<%= t.name %></a>
+    <a class="tag" href="<%= urls.archive('tag', t.slug) %>">#<%= t.name %></a>
     <% }) %>
   </div>
   <% } %>
   <div class="author-card card">
-    <% if (user.avatar) { %><img class="avatar" src="<%= user.avatar %>" alt="<%= user.name %>"><% } else { %><div class="avatar avatar-placeholder"><%= user.name.charAt(0).toUpperCase() %></div><% } %>
+    <% if (user.avatar) { %><img class="avatar" src="<%= canonicalMedia(user.avatar) %>" loading="lazy" alt="<%= user.name %>"><% } else { %><div class="avatar avatar-placeholder"><%= user.name.charAt(0).toUpperCase() %></div><% } %>
     <div>
       <h3><%= user.name %></h3>
       <% if (user.bio) { %><p><%= user.bio %></p><% } %>
@@ -49,7 +45,7 @@
   </div>
 </article>
 <% if (post.summary) { %>
-<script>
+<script nonce="<%= cspNonce %>">
   (function () {
     var btn = document.getElementById('summary-toggle');
     var box = document.getElementById('summary-box');

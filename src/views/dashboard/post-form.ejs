@@ -12,8 +12,8 @@
     <div class="editor-toolbar">
       <span class="word-count" id="word-count">0 words · 1 min read</span>
     </div>
-    <input type="hidden" name="content" id="content" value="<%= post ? post.content : '' %>">
-    <input type="hidden" name="format" id="format" value="<%= post ? post.format : 'html' %>">
+    <input type="hidden" name="content" id="content" value="<%= post ? editorContent : '' %>">
+    <input type="hidden" name="format" value="html">
     <div id="editor-pane" class="editor-pane">
       <div id="editor-host" class="editor-host"></div>
     </div>
@@ -78,8 +78,14 @@
     </div>
     <div class="card">
       <h3>Featured image</h3>
-      <% if (post && post.featuredImage) { %><img class="image-preview" src="<%= post.featuredImage %>" alt="Featured image"><% } %>
+      <% if (post && post.featuredImage) { %><img class="image-preview" src="<%= canonicalMedia(post.featuredImage) %>" alt="Featured image"><% } %>
       <input type="file" name="featuredImage" accept="image/jpeg,image/png,image/gif,image/webp">
+      <label>Or select from your library
+        <select name="featuredImageUrl"><option value="">Keep current image</option>
+          <% library.forEach((item) => { %><option value="<%= canonicalMedia(item.url) %>"><%= item.originalName || item.filename %></option><% }) %>
+        </select>
+      </label>
+      <% if (post && post.featuredImage) { %><label><input type="checkbox" name="featuredImageRemove" value="1"> Remove current image</label><% } %>
     </div>
     <div class="card">
       <h3>SEO</h3>
@@ -90,8 +96,14 @@
         <textarea name="metaDescription" rows="3"><%= post ? post.metaDescription : '' %></textarea>
       </label>
       <label>OG image
-        <% if (post && post.ogImage) { %><img class="image-preview" src="<%= post.ogImage %>" alt="OG image"><% } %>
+        <% if (post && post.ogImage) { %><img class="image-preview" src="<%= canonicalMedia(post.ogImage) %>" alt="OG image"><% } %>
         <input type="file" name="ogImage" accept="image/jpeg,image/png,image/gif,image/webp">
+      <label>Or select from your library
+        <select name="ogImageUrl"><option value="">Keep current image</option>
+          <% library.forEach((item) => { %><option value="<%= canonicalMedia(item.url) %>"><%= item.originalName || item.filename %></option><% }) %>
+        </select>
+      </label>
+      <% if (post && post.ogImage) { %><label><input type="checkbox" name="ogImageRemove" value="1"> Remove current image</label><% } %>
       </label>
     </div>
   </aside>

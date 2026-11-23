@@ -3,12 +3,13 @@
   <h1>Profile</h1>
 </div>
 <% if (saved) { %><div class="notice">Profile saved.</div><% } %>
+<% if (googleLinked) { %><div class="notice">Google account linked.</div><% } %>
 <% if (error) { %><div class="notice notice-error"><%= error %></div><% } %>
 <div class="card">
   <form method="POST" action="/dashboard/profile" enctype="multipart/form-data">
     <div class="avatar-row">
       <% if (currentUser.avatar) { %>
-      <img class="avatar" src="<%= currentUser.avatar %>" alt="<%= currentUser.name %>">
+      <img class="avatar" src="<%= canonicalMedia(currentUser.avatar) %>" alt="<%= currentUser.name %>">
       <% } else { %>
       <div class="avatar avatar-placeholder"><%= currentUser.name.charAt(0).toUpperCase() %></div>
       <% } %>
@@ -16,6 +17,7 @@
         <input type="file" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp">
       </label>
     </div>
+    <% if (currentUser.avatar) { %><label><input type="checkbox" name="removeAvatar" value="1"> Remove public avatar</label><% } %>
     <label>Name
       <input type="text" name="name" value="<%= currentUser.name %>" required>
     </label>
@@ -26,4 +28,14 @@
     <button class="btn btn-primary" type="submit">Save profile</button>
   </form>
 </div>
+<% if (googleEnabled && !currentUser.googleId && currentUser.passwordHash) { %>
+<div class="card">
+  <form method="POST" action="/auth/google/link">
+    <label>Confirm your IncBlog password to link Google
+      <input type="password" name="password" autocomplete="current-password" required>
+    </label>
+    <button class="btn btn-primary" type="submit">Link Google account</button>
+  </form>
+</div>
+<% } %>
 <%- include('../partials/dashboard-bottom') %>

@@ -1,5 +1,5 @@
-<%- include('../partials/blog-top', { metaDescription: settings.blogDescription || '' }) %>
-<% if (locals.subscribed) { %><div class="notice">Thanks for subscribing.</div><% } %>
+<%- include('../partials/blog-top') %>
+<% if (locals.subscribed) { %><div class="notice">Check your email to confirm your subscription.</div><% } %>
 <% if (settings.blogDescription) { %><p class="blog-description"><%= settings.blogDescription %></p><% } %>
 <% if (locals.currentUser && currentUser.id !== user.id) { %>
 <form method="POST" action="/blog/<%= user.username %>/<%= isFollowing ? 'unfollow' : 'follow' %>" style="margin-bottom: var(--spacing-16);">
@@ -9,16 +9,17 @@
 <div class="post-list">
   <% posts.forEach(function(p) { %>
   <article class="post-card">
-    <% if (p.featuredImage) { %><a href="/blog/<%= user.username %>/<%= p.slug %>"><img class="post-card-image" src="<%= p.featuredImage %>" alt="<%= p.title %>" loading="lazy"></a><% } %>
-    <h2><a href="/blog/<%= user.username %>/<%= p.slug %>"><%= p.title %></a></h2>
+    <% if (p.featuredDisplay) { %><a href="<%= urls.post(p.slug) %>"><%- include('../partials/featured-image', { image: p.featuredDisplay, title: p.title, hero: false }) %></a><% } %>
+    <h2><a href="<%= urls.post(p.slug) %>"><%= p.title %></a></h2>
     <p class="meta">
       <%= new Date(p.publishAt || p.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
-      · <%= readTime(p.content) %> min read
-      <% if (p.Category) { %> · <a href="/blog/<%= user.username %>/category/<%= p.Category.slug %>"><%= p.Category.name %></a><% } %>
+      · <%= p.readMinutes %> min read
+      <% if (p.Category) { %> · <a href="<%= urls.archive('category', p.Category.slug) %>"><%= p.Category.name %></a><% } %>
     </p>
     <% if (p.excerpt) { %><p class="excerpt"><%= p.excerpt %></p><% } %>
   </article>
   <% }) %>
   <% if (!posts.length) { %><p class="empty">No posts yet. Check back soon!</p><% } %>
 </div>
+<%- include('../partials/pagination') %>
 <%- include('../partials/blog-bottom') %>

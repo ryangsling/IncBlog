@@ -14,13 +14,13 @@
 <div class="media-grid">
   <% media.forEach(function(m) { %>
   <div class="media-item card">
-    <img src="<%= m.thumbUrl || m.url %>" alt="<%= m.originalName || m.filename %>" loading="lazy">
+    <img src="<%= canonicalMedia(m.thumbUrl || m.url) %>" alt="<%= m.originalName || m.filename %>" loading="lazy">
     <div class="media-meta">
       <span class="media-name" title="<%= m.originalName || m.filename %>"><%= m.originalName || m.filename %></span>
       <span class="media-info"><%= (m.size / 1024).toFixed(1) %> KB · <%= new Date(m.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) %></span>
     </div>
     <div class="media-actions">
-      <button type="button" class="btn btn-ghost btn-sm copy-url" data-url="<%= m.url %>">Copy URL</button>
+      <button type="button" class="btn btn-ghost btn-sm copy-url" data-url="<%= canonicalMedia(m.url) %>">Copy URL</button>
       <form method="POST" action="/dashboard/media/<%= m.id %>/delete" data-confirm="Delete this file?" class="inline">
         <button class="btn btn-danger btn-sm" type="submit">Delete</button>
       </form>

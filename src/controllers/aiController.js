@@ -10,6 +10,7 @@ async function complete(prompt, maxTokens = 500) {
   }
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
+    signal: AbortSignal.timeout(15000),
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
@@ -31,47 +32,50 @@ async function complete(prompt, maxTokens = 500) {
   return data.choices[0].message.content.trim();
 }
 
-function requireContent(req, res) {
-  const content = (req.body.content || '').trim();
-  if (!content) {
-    res.status(400).json({ error: 'Write some post content first.' });
-    return null;
+exports.validate = (req, res, next) => {
+  const { content, title } = req.body || {};
+  if (!req.is('application/json') || typeof content !== 'string' || !content.trim() || content.length > 12000 ||
+      (title !== undefined && (typeof title !== 'string' || title.length > 255))) {
+    return res.status(400).json({ error: 'Submit JSON with post content (1–12,000 characters) and an optional title (up to 255 characters).' });
   }
-  return content.slice(0, 12000);
+  req.aiInput = { content: content.trim(), title: title?.trim() || 'Untitled' };
+  return next();
+};
+
+function aiError(res, error) {
+  const status = [502, 503].includes(error.status) ? error.status : 500;
+  return res.status(status).json({ error: 'AI assistance is temporarily unavailable.' });
 }
 
 exports.excerpt = async (req, res) => {
-  const content = requireContent(req, res);
-  if (!content) return;
+  const { content, title } = req.aiInput;
   try {
     const text = await complete(
-      `Write a hook-style excerpt of 30-50 words for the following blog post titled "${req.body.title || 'Untitled'}". It should make readers want to click. Respond with the excerpt text only - no quotes, no preamble.\n\nPOST CONTENT:\n${content}`
+      `Write a hook-style excerpt of 30-50 words for the following blog post titled "${title}". It should make readers want to click. Respond with the excerpt text only - no quotes, no preamble.\n\nPOST CONTENT:\n${content}`
     );
     res.json({ excerpt: text });
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    aiError(res, err);
   }
 };
 
 exports.summary = async (req, res) => {
-  const content = requireContent(req, res);
-  if (!content) return;
+  const { content, title } = req.aiInput;
   try {
     const text = await complete(
-      `Write a 100-150 word summary of the following blog post titled "${req.body.title || 'Untitled'}". Respond with the summary text only - no quotes, no preamble.\n\nPOST CONTENT:\n${content}`
+      `Write a 100-150 word summary of the following blog post titled "${title}". Respond with the summary text only - no quotes, no preamble.\n\nPOST CONTENT:\n${content}`
     );
     res.json({ summary: text });
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    aiError(res, err);
   }
 };
 
 exports.titles = async (req, res) => {
-  const content = requireContent(req, res);
-  if (!content) return;
+  const { content, title } = req.aiInput;
   try {
     const text = await complete(
-      `Suggest 3 alternative, compelling titles for the following blog post (current title: "${req.body.title || 'Untitled'}"). Respond with exactly 3 titles, one per line, with no numbering, bullets or extra text.\n\nPOST CONTENT:\n${content}`
+      `Suggest 3 alternative, compelling titles for the following blog post (current title: "${title}"). Respond with exactly 3 titles, one per line, with no numbering, bullets or extra text.\n\nPOST CONTENT:\n${content}`
     );
     const titles = text
       .split('\n')
@@ -80,6 +84,6 @@ exports.titles = async (req, res) => {
       .slice(0, 3);
     res.json({ titles });
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    aiError(res, err);
   }
 };

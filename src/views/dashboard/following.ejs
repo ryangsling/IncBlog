@@ -9,7 +9,7 @@
 <div class="post-list">
   <% posts.forEach(function(p) { %>
   <article class="post-card">
-    <% if (p.featuredImage) { %><a href="/blog/<%= p.author.username %>/<%= p.slug %>"><img class="post-card-image" src="<%= p.featuredImage %>" alt="<%= p.title %>" loading="lazy"></a><% } %>
+    <% if (p.featuredDisplay) { %><a href="/blog/<%= p.author.username %>/<%= p.slug %>"><%- include('../partials/featured-image', { image: p.featuredDisplay, title: p.title, hero: false }) %></a><% } %>
     <h2><a href="/blog/<%= p.author.username %>/<%= p.slug %>"><%= p.title %></a></h2>
     <p class="meta">
       <a href="/blog/<%= p.author.username %>" class="author-link"><%= p.author.name %></a> ·

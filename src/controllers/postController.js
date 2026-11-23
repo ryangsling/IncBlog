@@ -1,10 +1,15 @@
+const { escapeXML } = require('ejs');
 const slugify = require('slugify');
-const { Post, Category, Tag, Subscriber, Setting, User, Op } = require('../models');
-const { processImage } = require('../middleware/upload');
+const { Post, Category, Tag, Subscriber, Media, Op, sequelize } = require('../models');
+const { processImage, discardUploads } = require('../middleware/upload');
+const { canonicalMedia, identifyMedia } = require('../mediaUrls');
+const { registerAsset, syncPostAssets } = require('../mediaAccess');
 const { sendMail } = require('../middleware/mailer');
-const { sanitizePostHtml } = require('../middleware/sanitize');
+const { renderArticleContent, sanitizePostHtml } = require('../middleware/sanitize');
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
+const { blogUrls, platformOrigin } = require('../seoUrls');
+const { getBlogContext } = require('../blogContext');
+const { savePostWithSlug } = require('../postSlugs');
 
 const STATUSES = ['draft', 'published', 'scheduled'];
 const FORMATS = ['markdown', 'html', 'plain'];
@@ -19,23 +24,7 @@ function sanitizeContent(content, format) {
   return format === 'html' ? sanitizePostHtml(content) : (content || '');
 }
 
-async function uniqueSlug(title, userId, ignoreId) {
-  const base = slugify(title, { lower: true, strict: true }) || 'post';
-  let candidate = base;
-  let i = 1;
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const where = { slug: candidate, userId };
-    if (ignoreId) where.id = { [Op.ne]: ignoreId };
-    // eslint-disable-next-line no-await-in-loop
-    const existing = await Post.findOne({ where, paranoid: false });
-    if (!existing) return candidate;
-    candidate = `${base}-${i}`;
-    i += 1;
-  }
-}
-
-async function syncTags(post, tagsString) {
+async function syncTags(post, tagsString, transaction) {
   const names = (tagsString || '')
     .split(',')
     .map((t) => t.trim())
@@ -45,10 +34,10 @@ async function syncTags(post, tagsString) {
     const slug = slugify(name, { lower: true, strict: true });
     if (!slug) continue;
     // eslint-disable-next-line no-await-in-loop
-    const [tag] = await Tag.findOrCreate({ where: { slug }, defaults: { name, slug } });
+    const [tag] = await Tag.findOrCreate({ where: { slug }, defaults: { name, slug }, transaction });
     tags.push(tag);
   }
-  await post.setTags(tags);
+  await post.setTags(tags, { transaction });
 }
 
 function resolveStatus(body) {
@@ -61,15 +50,15 @@ function resolveStatus(body) {
 
 exports.notifySubscribers = async function notifySubscribers(post, user) {
   if (!post || post.status !== 'published') return;
-  const settings = await Setting.findOne({ where: { userId: user.id } });
-  const blogTitle = (settings && settings.blogTitle) || `${user.name}'s Blog`;
-  const subscribers = await Subscriber.findAll({ where: { userId: user.id, status: 'active' } });
-  const postUrl = `${BASE_URL}/blog/${user.username}/${post.slug}`;
+  const context = await getBlogContext({ id: user.id });
+  const blogTitle = context?.settings.blogTitle || `${user.name}'s Blog`;
+  const subscribers = await Subscriber.findAll({ where: { userId: user.id, status: 'active', email: { [Op.ne]: null }, token: { [Op.like]: 'consented:%' } } });
+  const postUrl = blogUrls(context?.user || user).post(post.slug);
   for (const sub of subscribers) {
     await sendMail({
       to: sub.email,
       subject: `New post: ${post.title} — ${blogTitle}`,
-      html: `<p><strong>${blogTitle}</strong></p><p>A new post has been published: <a href="${postUrl}">${post.title}</a></p><p><a href="${BASE_URL}/unsubscribe?token=${sub.token}">Unsubscribe</a></p>`,
+      html: `<p><strong>${escapeXML(blogTitle)}</strong></p><p>A new post has been published: <a href="${escapeXML(postUrl)}">${escapeXML(post.title)}</a></p><p><a href="${platformOrigin}/unsubscribe?token=${encodeURIComponent(sub.token)}">Unsubscribe</a></p>`,
     });
   }
 };
@@ -97,6 +86,7 @@ exports.showCreate = async (req, res, next) => {
       title: 'New post',
       active: 'posts',
       post: null,
+      library: await Media.findAll({ where: { userId: req.user.id } }),
       categories,
       tagsString: '',
     });
@@ -105,7 +95,36 @@ exports.showCreate = async (req, res, next) => {
   }
 };
 
+async function saveImages(req, post, staged) {
+  for (const field of ['featuredImage', 'ogImage']) {
+    const file = req.files?.[field]?.[0];
+    const url = req.body[field + 'Url'];
+    if (file) {
+      const asset = await processImage(file.buffer, { featured: field === 'featuredImage', thumbnail: false });
+      staged.push(asset);
+      post[field] = asset.url;
+    } else if (url) {
+      if (!identifyMedia(url)) throw Object.assign(new Error('Select a library image.'), { status: 400 });
+      post[field] = canonicalMedia(url);
+    } else if (req.body[field + 'Remove'] === '1') {
+      post[field] = null;
+    }
+  }
+}
+
+async function savePost(req, post, staged) {
+  await saveImages(req, post, staged);
+  await sequelize.transaction({ type: 'IMMEDIATE' }, async (transaction) => {
+    for (const asset of staged) await registerAsset(asset, req.user.id, transaction);
+    await savePostWithSlug(post, transaction);
+    await syncPostAssets(post, transaction);
+    await syncTags(post, req.body.tags, transaction);
+  });
+  staged.length = 0;
+}
+
 exports.create = async (req, res, next) => {
+  const staged = [];
   try {
     const title = (req.body.title || '').trim() || 'Untitled';
     const { status, publishAt } = resolveStatus(req.body);
@@ -114,7 +133,6 @@ exports.create = async (req, res, next) => {
       userId: req.user.id,
       categoryId: req.body.categoryId || null,
       title,
-      slug: await uniqueSlug(title, req.user.id),
       content: sanitizeContent(req.body.content, format),
       format,
       excerpt: req.body.excerpt || '',
@@ -124,17 +142,12 @@ exports.create = async (req, res, next) => {
       status,
       publishAt,
     };
-    if (req.files && req.files.featuredImage && req.files.featuredImage[0]) {
-      payload.featuredImage = (await processImage(req.files.featuredImage[0].buffer, { thumbnail: false })).url;
-    }
-    if (req.files && req.files.ogImage && req.files.ogImage[0]) {
-      payload.ogImage = (await processImage(req.files.ogImage[0].buffer, { thumbnail: false })).url;
-    }
-    const post = await Post.create(payload);
-    await syncTags(post, req.body.tags);
+    const post = Post.build(payload);
+    await savePost(req, post, staged);
     await exports.notifySubscribers(post, req.user);
     res.redirect('/dashboard/posts');
   } catch (err) {
+    await discardUploads(staged);
     next(err);
   }
 };
@@ -152,6 +165,8 @@ exports.showEdit = async (req, res, next) => {
       title: 'Edit post',
       active: 'posts',
       post,
+      editorContent: renderArticleContent(post.content, post.format, canonicalMedia),
+      library: await Media.findAll({ where: { userId: req.user.id } }),
       categories,
       tagsString,
     });
@@ -161,15 +176,13 @@ exports.showEdit = async (req, res, next) => {
 };
 
 exports.update = async (req, res, next) => {
+  const staged = [];
   try {
     const post = await Post.findOne({ where: { id: req.params.id, userId: req.user.id } });
     if (!post) return res.status(404).render('404', { title: 'Not found' });
 
     const wasPublished = post.status === 'published';
     const title = (req.body.title || '').trim() || post.title;
-    if (title !== post.title) {
-      post.slug = await uniqueSlug(title, req.user.id, post.id);
-    }
     const { status, publishAt } = resolveStatus(req.body);
     const format = resolveFormat(req.body);
     post.title = title;
@@ -183,20 +196,13 @@ exports.update = async (req, res, next) => {
     post.status = status;
     if (status !== 'published' || !post.publishAt) post.publishAt = publishAt;
 
-    if (req.files && req.files.featuredImage && req.files.featuredImage[0]) {
-      post.featuredImage = (await processImage(req.files.featuredImage[0].buffer, { thumbnail: false })).url;
-    }
-    if (req.files && req.files.ogImage && req.files.ogImage[0]) {
-      post.ogImage = (await processImage(req.files.ogImage[0].buffer, { thumbnail: false })).url;
-    }
-
-    await post.save();
-    await syncTags(post, req.body.tags);
+    await savePost(req, post, staged);
     if (!wasPublished && post.status === 'published') {
       await exports.notifySubscribers(post, req.user);
     }
     res.redirect('/dashboard/posts');
   } catch (err) {
+    await discardUploads(staged);
     next(err);
   }
 };

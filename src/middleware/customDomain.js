@@ -1,4 +1,6 @@
-const { User } = require('../models');
+const { Op } = require('../models');
+const { normalizeDomain, platformHost } = require('../seoUrls');
+const { getBlogContext } = require('../blogContext');
 
 const SKIP_PREFIXES = ['/css', '/js', '/uploads', '/favicon'];
 
@@ -6,22 +8,16 @@ const SKIP_PREFIXES = ['/css', '/js', '/uploads', '/favicon'];
 // transparently route the request to that user's public blog.
 module.exports = async function customDomain(req, res, next) {
   try {
-    const host = (req.headers.host || '').split(':')[0].toLowerCase();
-    if (!host || host === 'localhost' || host === '127.0.0.1') return next();
-
-    let baseHost = null;
-    try {
-      baseHost = new URL(process.env.BASE_URL || '').hostname;
-    } catch (err) {
-      baseHost = null;
-    }
-    if (baseHost && host === baseHost) return next();
+    const host = normalizeDomain((req.headers.host || '').split(':')[0]);
+    if (!host || host === platformHost) return next();
     if (SKIP_PREFIXES.some((p) => req.path.startsWith(p))) return next();
-    if (req.path.startsWith('/blog/') || req.path.startsWith('/unsubscribe')) return next();
+    if (req.path.startsWith('/blog/') || req.path.startsWith('/unsubscribe') || req.path === '/confirm-subscription') return next();
 
-    const user = await User.findOne({ where: { customDomain: host } });
-    if (user) {
-      req.url = `/blog/${user.username}${req.path === '/' ? '' : req.url}`;
+    const context = await getBlogContext({ customDomain: host, customDomainVerifiedAt: { [Op.ne]: null } });
+    if (context) {
+      req.blogContext = context;
+      if (req.path === '/robots.txt') return next();
+      req.url = `/blog/${context.user.username}${req.path === '/' ? req.url.slice(1) : req.url}`;
     }
     next();
   } catch (err) {

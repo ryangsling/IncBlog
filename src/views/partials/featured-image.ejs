@@ -1,0 +1,6 @@
+<% if (image) { %>
+<img class="<%= hero ? 'post-featured' : 'post-card-image' %>" src="<%= image.src %>" alt="<%= title %>"
+  <% if (image.srcset) { %>srcset="<%= image.srcset %>" sizes="<%= hero ? '(max-width: 800px) 100vw, 800px' : '(max-width: 720px) 100vw, 720px' %>"<% } %>
+  <% if (image.width && image.height) { %>width="<%= image.width %>" height="<%= image.height %>"<% } %>
+  <% if (hero) { %>fetchpriority="high"<% } else { %>loading="lazy" decoding="async"<% } %>>
+<% } %>
