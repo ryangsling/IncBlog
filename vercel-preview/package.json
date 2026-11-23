@@ -1,0 +1,16 @@
+{
+  "name": "incblog-disposable-vercel-preview",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Read-only synthetic IncBlog Vercel smoke test; no production data",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "express": "^4.22.1"
+  }
+}
