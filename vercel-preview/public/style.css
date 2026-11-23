@@ -1,0 +1,14 @@
+:root{color-scheme:light;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;color:#252a33;background:#faf9f5}
+*{box-sizing:border-box}body{margin:0;line-height:1.6}header{border-bottom:1px solid #eae4da;background:white}a{color:inherit}
+.wrap{max-width:860px;margin:0 auto;padding:0 24px}.nav{height:74px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{text-decoration:none;font-size:28px;font-weight:800;letter-spacing:-1.6px}.brand span{color:#d06a40}
+.chip{font-size:10px;font-weight:800;color:#955527;background:#fff1e5;padding:8px 10px;border-radius:100px;letter-spacing:1px}
+main{padding-top:72px!important;padding-bottom:110px!important}.eyebrow{font-size:12px;letter-spacing:2.2px;color:#bc673e;font-weight:800}
+h1{max-width:780px;font-size:clamp(36px,6vw,57px);letter-spacing:-2.3px;line-height:1.1;margin:20px 0}
+.lead{font-size:19px;max-width:660px;color:#636873}.notice{padding:20px 23px;border:1px solid #e7d5c7;background:#fff9ef;border-radius:12px;margin:35px 0}
+h2{margin-top:45px}.stack{display:grid;gap:16px}.post{border:1px solid #e9e6de;border-radius:14px;padding:21px 25px;background:white}
+.post h3{margin:2px 0 8px;font-size:24px}.post a{text-decoration:none}.post a:hover{text-decoration:underline}.post p{margin:0;color:#65707c}
+.date{font-size:13px;color:#9a8d80}.back{display:inline-block;margin-top:12px;text-decoration:none;color:#ac5c3e}
+.article{margin-top:28px;background:white;padding:28px;border:1px solid #eee5db;border-radius:12px;font-size:18px}
+footer{color:#919099;border-top:1px solid #eae4da;font-size:13px;padding:24px!important}
+@media(max-width:520px){.nav{height:66px}.chip{font-size:9px}main{padding-top:45px!important}h1{letter-spacing:-1.3px}}
